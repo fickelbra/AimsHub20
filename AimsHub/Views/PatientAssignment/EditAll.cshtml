@@ -1,0 +1,288 @@
+﻿@model PatientAssignmentEditAllViewModel
+@using AimsHub.Models
+@using AimsHub.ViewModels
+@using GridMvc.Html
+
+@{
+    ViewBag.Title = "Edit All";
+}
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<style type="text/css">
+    .ServiceDate {
+        width: 60px;
+    }
+
+    .Hosp {
+        width: 80px;
+        height: 35px;
+    }
+
+    .PCP {
+        width: 190px;
+        height: 35px;
+    }
+
+    .Patient {
+        width: 170px;
+    }
+
+    .MRN {
+        width: 110px;
+    }
+    .Physician
+    {
+        width: 150px;
+    }
+
+    .Room {
+        width: 90px;
+    }
+
+    .DOB {
+        width: 90px;
+    }
+
+
+    .Gender {
+        width: 85px;
+        height: 35px;
+    }
+
+    .ServiceType {
+        width: 120px;
+        height: 35px;
+    }
+
+    .Notes {
+        width: 100px;
+    }
+    .PatientClass {
+        width: 85px;
+    }
+
+    tr.grid-empty-text {
+        font-weight: bolder;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        font-size: xx-large;
+    }
+</style>
+<script type='text/javascript'>
+    $(function () {
+        //After page has loaded, associate each hospital dropdown with their relevant physician and PCP dropdowns
+        $(document).ready(function () {
+            $('table tr').each(function () {
+                //Wire page up via each row
+                var id = $(this).find('#ID').val();
+                var hospddl = $(this).find('#Hospital' + id);
+                var pcpddl = $(this).find('#PCP' + id);
+                var phyddl = $(this).find('#Physician' + id);
+                setJSON(hospddl, pcpddl, phyddl);
+            });
+            $("#NotesPopupOuter").dialog({
+                autoOpen: false,
+                show: 'clip',
+                resizable: true,
+                draggable: true,
+                title: "Notes/Comments",
+                height: 'auto',
+                width: '900px',
+                modal: true,
+                position: { my: "top", at: "top", of: window }
+            });
+        });
+
+        function setJSON(firstddl, resultddl, resultddl2) {
+            firstddl.change(function () {
+                var valuetopass = firstddl.val();
+                $.getJSON('/PatientLog/jsonPCP',
+                    { site: valuetopass }, function (result) {
+                        resultddl.empty();
+                        //resultddl.append('<option value="No PCP">No PCP</option>');
+                        $(result).each(function () {
+                            $(document.createElement('option'))
+                                .attr('value', this.Id)
+                                .text(this.Value)
+                                .appendTo(resultddl);
+                            resultddl.Add
+                        });
+                    });
+                $.getJSON('/PatientLog/jsonAIMSPhy',
+                    { site: valuetopass }, function (result) {
+                        resultddl2.empty();
+                        $(result).each(function () {
+                            $(document.createElement('option'))
+                                .attr('value', this.Id)
+                                .text(this.Text)
+                                .appendTo(resultddl2);
+                            resultddl2.Add
+                        });
+                    });
+            });
+        }
+
+        $('form').submit(function () {
+            var patients = [];
+            var i = 0;
+            $('table tr').each(function (i) {
+                if (i > 0) {
+                    //For each row in the data table, creates a new PatientLog object to be pushed to
+                    //the server via JSON. DateCreated and others are added even though they have no
+                    //options to change because they will get updated as null on the server
+                    var theID = $(this).find('#ID').val()
+                    patients.push({
+                        ID: theID,
+                        ServiceDate: $(this).find('#ServiceDate').val(),
+                        Hospital: $(this).find('#Hospital' + theID + ' option:checked').val(),
+                        PCP_Practice: $(this).find('#PCP' + theID + ' option:checked').val(),
+                        PatientName: $(this).find('#Patient').val(),
+                        Physician: $(this).find('#Physician' + theID + ' option:checked').val(),
+                        MRN_FIN: $(this).find('#MRN').val(),
+                        DOB: $(this).find('#DOB').val(),
+                        RoomNo: $(this).find('#Room').val(),
+                        Gender: $(this).find('#Gender option:checked').val(),
+                        ServiceType: $(this).find('#ServiceType option:checked').val(),
+                        Notes: $(this).find('#Notes').val(),
+                        DateCreated: $(this).find('#DateCreated').val(),
+                        Comments: $(this).find('#Comments').val(),
+                        AIMSComments: $(this).find('#AIMSComments').val(),
+                        FaceSheet: $(this).find('#FaceSheet').val(),
+                        PatientClass: $(this).find('#PatientClass option:checked').val()
+                    });
+                }
+                i++;
+            });
+            $.ajax({
+                url: '/PatientLog/jsonSubmitPatientList',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(patients),
+                success: function (response) {
+                    window.location.href = "@Url.Action("Index", "PatientAssignment")";
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+
+            return false;
+        });
+    });
+    function showNotes(btn) {
+        var cell = $(btn).parent();
+        var row = $(btn).parent().parent();
+        var txt = $(cell).find('#hidNotes').val();
+        var id = $(row).find('[data-name=ID]').html();
+        $('#notesView').val(txt);
+        txt = $(cell).find('#hidComments').val();
+        $('#commentsView').val(txt);
+        $('#NotesPopupID').val(id);
+        //Set tabs back to default
+        $('a[href="#tabs-1"]').click();
+        $('#NotesPopupOuter').dialog('open');
+    }
+    function closeNotes() {
+        $('#NotesPopupOuter').dialog('close');
+    }
+    function enableSaveNotesButton() {
+        $('[name=SaveNotesButton]').prop('disabled', '');
+    }
+    function saveNotes() {
+        var id = $('#NotesPopupID').val();
+        var notes = $('#notesView').val();
+        var comments = $('#commentsView').val();
+        $.ajax({
+            type: 'POST',
+            url: 'PatientLog/jsonSaveNotes',
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            data: JSON.stringify({ ID: id, Notes: notes, Comments: comments }),
+            dataType: 'json',
+            success: function (response) {
+                //Find this row again, not the best solution but hey I'm one dude
+                var row;
+                $('.grid-row').each(function () {
+                    var idcell = $(this).find('[data-name=ID]');
+                    if (idcell.html() == id) {
+                        row = idcell.parent();
+                        return false;
+                    }
+                });
+                $(row).find('#hidNotes').val(notes);
+                $(row).find('#hidComments').val(comments);
+                closeNotes();
+            },
+            failure: function (response) {
+                alert(response.responseText);
+            }
+        });
+    }
+</script>
+
+<div class="AIMSBanner">
+    Patients from @Model.FromDate to @Model.ToDate
+</div>
+
+<div id="NotesPopupOuter" style="display: none">
+    <div style="text-align: right;"><input id="SaveNotesButton" name="SaveNotesButton" class="btn btn-success btn-sm" style="margin-right: 15px;" type="button" value="Save Changes and Close" onclick="javascript:saveNotes();" disabled="disabled" /><input type="button" value="Close Popup" class="btn btn-danger btn-sm" onclick="javascript:closeNotes();" /></div>
+    <div id="tabs" data-role="tabs" class="centered">
+        <ul>
+            <li><a href="#tabs-1">Comments</a></li>
+            <li><a href="#tabs-2">Notes</a></li>
+        </ul>
+        <div id="tabs-1">
+            <textarea id="commentsView" style="overflow: scroll; margin: 0; padding: 0; width: 800px; height: 600px;" onkeypress="javascript:enableSaveNotesButton();"></textarea>
+        </div>
+        <div id="tabs-2">
+            <textarea id="notesView" style="overflow: scroll; margin: 0; padding: 0; width: 800px; height: 600px;" onkeypress="javascript:enableSaveNotesButton();"></textarea>
+        </div>
+        <input type="hidden" id="NotesPopupID" name="NotesPopupID" />
+    </div>
+</div>
+
+<form>
+    <div class="form-horizontal">
+        <div class="form-group">
+            <p>
+                <input type="submit" value="Save" class="btn btn-success" />
+                &nbsp;
+                <a type="button" class="btn btn-danger btn-sm" href="@Url.Action("Index", "PatientAssignment")">
+                    <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                    <span>Cancel Changes</span>
+                </a>
+            </p>
+
+            @Html.Grid(Model.Patients).Columns(columns =>
+       {
+           columns.Add(c => c.Patient.ID, true).Titled("ID").Encoded(false).Sanitized(false).RenderValueAs(c => Html.Hidden("ID", c.Patient.ID));
+           columns.Add(c => c.Patient.ServiceDate).Titled("ServiceDate").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.TextBox("ServiceDate", Convert.ToDateTime(c.Patient.ServiceDate).ToShortDateString(), new { @class = "form-control date-picker griddate" }));
+           columns.Add(c => c.Patient.Hospital).Titled("Hospital").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.DropDownList("Hospital" + c.Patient.ID, c.HospitalList, new { @class = "form-control Hosp" }));
+           columns.Add(c => c.Patient.Physician).Titled("Physician").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.DropDownList("Physician" + c.Patient.ID, c.PhysicianList, new { @class = "form-control Physician" }));
+           columns.Add(c => c.Patient.PCP_Practice).Titled("PCP_Practice").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.DropDownList("PCP" + c.Patient.ID, c.PCPList, new { @class = "form-control PCP" }));
+           columns.Add(c => c.Patient.PatientName).Titled("Name").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.TextBox("Patient", c.Patient.PatientName, new { @class = "form-control Patient" }));
+           columns.Add(c => c.Patient.MRN_FIN).Titled("MRN").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.TextBox("MRN", c.Patient.MRN_FIN, new { @class = "form-control MRN" }));
+           columns.Add(c => c.Patient.RoomNo).Titled("Room").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.TextBox("Room", c.Patient.RoomNo, new { @class = "form-control Room" }));
+           columns.Add(c => c.Patient.DOB, true).Titled("DOB").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.TextBox("DOB", Convert.ToDateTime(c.Patient.DOB).ToShortDateString(), new { @class = "form-control date-pickerDOB griddate DOB" }));
+           columns.Add(c => c.Patient.Gender, true).Titled("Gender").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.DropDownList("Gender", c.GenderList, new { @class = "form-control Gender" }));
+           columns.Add(c => c.Patient.ServiceType).Titled("ServiceType").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.DropDownList("ServiceType", c.ServiceTypeList, new { @class = "form-control ServiceType" }));
+           //columns.Add(c => c.Patient.Notes, true).Titled("Notes").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.TextBox("Notes", c.Patient.Notes, new { @class = "form-control Notes" }));
+           columns.Add(c => c.Patient.DateCreated, true).Titled("DateCreated").Encoded(false).Sanitized(false).RenderValueAs(c => Html.Hidden("DateCreated", c.Patient.DateCreated));
+           //columns.Add(c => c.Patient.Comments, true).Titled("Comments").Encoded(false).Sanitized(false).RenderValueAs(c => Html.Hidden("Comments", c.Patient.Comments));
+           columns.Add(c => c.Patient.AIMSComments, true).Titled("AIMSComments").Encoded(false).Sanitized(false).RenderValueAs(c => Html.Hidden("AIMSComments", c.Patient.AIMSComments));
+           columns.Add(c => c.Patient.FaceSheet, true).Titled("FaceSheet").Encoded(false).Sanitized(false).RenderValueAs(c => Html.Hidden("FaceSheet", c.Patient.FaceSheet));
+           columns.Add(c => c.Patient.PatientClass).Titled("PatientClass").Encoded(false).Sanitized(false).RenderValueAs(c => @Html.DropDownList("PatientClass", c.PatientClassList, new { @class = "form-control PatientClass" }));
+           columns.Add(c => c.Patient.Notes).Titled("Notes").Sortable(false).Encoded(false).Sanitized(false).RenderValueAs(c => Html.Partial("_ButtonWith2HiddenPartial", new ButtonWithHidden2 { cls = "btn btn-info", valu = c.Patient.Notes, jqueryFunction = "showNotes(this)", plogCol = "Notes", valu2 = c.Patient.Comments, plogCol2 = "Comments" }));
+       }).Selectable(false).Sortable(false).Filterable(false)
+            <p>
+                <input type="submit" value="Save" class="btn btn-success" />
+                &nbsp;
+                <a type="button" class="btn btn-danger btn-sm" href="@Url.Action("Index", "PatientAssignment")">
+                    <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                    <span>Cancel Changes</span>
+                </a>
+            </p>
+        </div>
+    </div>
+</form>

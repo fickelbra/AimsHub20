@@ -1,0 +1,105 @@
+﻿@model AimsHub.Models.AccountModel
+
+@{
+    Layout = null;
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+<!DOCTYPE html>
+    <style type="text/css">
+        .loginTxt {
+            padding: 10px;
+            width: 350px;
+            margin-bottom: 25px;
+            font-size: 1.22em;
+            font-weight: normal;
+            text-shadow: 1px 0 1px #fff;
+            background: #fff;
+            border: 1px solid rgb(27,145,255);
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+            -webkit-box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+            -moz-box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+            box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+            -webkit-transition: all 0.4s linear;
+            -moz-transition: all 0.4s linear;
+            transition: all 0.4s linear;
+        }
+        .loginBtn {
+            outline: none;
+            box-sizing: border-box;
+            display: block;
+            min-width: 60px;
+            height: 36px;
+            padding: 0 22px;
+            cursor: pointer;
+            color: #fff;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-color: rgb(27,145,255);
+            vertical-align: middle;
+            line-height: 36px;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            background-color:  rgb(27,145,255);
+            background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%,  rgb(27,145,255)), color-stop(100%, rgb(27,145,255)));
+            background-image: -webkit-linear-gradient(top, #5d93eb, rgb(27,145,255));
+            background-image: -moz-linear-gradient(top, #5d93eb, rgb(27,145,255));
+            background-image: -o-linear-gradient(top, #5d93eb, rgb(27,145,255));
+            background-image: linear-gradient(top, #5d93eb, rgb(27,145,255));
+            -webkit-border-radius: 3px;
+            -moz-border-radius: 3px;
+            -ms-border-radius: 3px;
+            -o-border-radius: 3px;
+            border-radius: 3px;
+        }
+    </style>
+    <html>
+
+    <head>
+        <meta name="viewport" content="width=device-width" />
+        <title>Aims Hub 2.0 - Login</title>
+    </head>
+    <body>
+        <div class="form-horizontal" style="margin-left: auto; margin-right: auto; text-align: center;">
+            <div>
+                <img src="~/Images/AimsLogoHub.png" class="img-rounded" style="width: 450px;" />
+            </div>
+            <table style="margin-left: auto; margin-right: auto; text-align: center;">
+                <tr>
+                    <td>
+                        <strong style="color: rgb(27,145,255)"> @Html.LabelFor(model => model.UserID, htmlAttributes: new { @class = "control-label col-md-2" }) : </strong>
+                    </td>
+                    <td>
+                        @Html.TextBoxFor(model => model.UserID, htmlAttributes: new { @class = "loginTxt" })
+                    </td>
+                </tr>
+                &nbsp;
+                <tr>
+                    <td>
+                        <strong style="color: rgb(27,145,255)">  @Html.LabelFor(model => model.Password, htmlAttributes: new { @class = "control-label col-md-2" }) : </strong>
+                    </td>
+                    <td>
+                        @Html.PasswordFor(model => model.Password, htmlAttributes: new { @class = "loginTxt" })
+                    </td>
+                </tr>
+                &nbsp;
+                <tr>
+                    <td>
+                    </td>
+                    <td align="right">
+                        <input type="submit" value="Login" class="btn loginBtn" />
+                    </td>
+                </tr>
+                
+            </table>
+            <div style="color: red; font-weight: bolder; width: 600px; margin-left: auto; margin-right: auto; text-align: left;">
+                @Html.ValidationSummary(false)
+            </div>
+        </div>
+    </body>
+</html>
+}

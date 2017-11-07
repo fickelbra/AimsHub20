@@ -1,0 +1,69 @@
+﻿@model ReportsDefaultViewModel
+@using AimsHub.Models
+@using AimsHub.ViewModels
+@{
+    ViewBag.Title = "Default";
+}
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        //Set sort graphic
+        var col = $('#SortColumn').val();
+        var dir = $('#SortDirection').val();
+        var lnk = $('#Sort' + col);
+        var header = lnk.parent();
+        if (dir.indexOf('A') != -1) {
+            $(header).find('[name=sortArrow]').addClass('glyphicon glyphicon-triangle-bottom');
+        }
+        else {
+            $(header).find('[name=sortArrow]').addClass('glyphicon glyphicon-triangle-top');
+        }
+    });
+    function triggerSubmit()
+    {
+        $('#btnSubmit').click();
+    }
+</script>
+
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+
+<div class="AIMSBanner">
+    <div>@Model.ReportName</div>
+</div>
+
+@using (Html.BeginForm("Default", "Reports", FormMethod.Post, new { id = "reportForm" }))
+{
+    <strong>From: </strong><input type="text" name="FromDate" id="txtFrom" class="date-picker textdate" value="@Model.FromDate" onchange="javascript:triggerSubmit();" />
+    @Html.Raw("&nbsp;")
+    <strong>To: </strong><input type="text" name="ToDate" id="txtTo" class="date-picker textdate" value="@Model.ToDate" onchange="javascript:triggerSubmit();" />
+    @Html.Raw("&nbsp;")
+    <input type="submit" id="btnSubmit" name="btnSubmit" style="display: none;" />
+    @Html.HiddenFor(model => model.SortColumn)
+    @Html.HiddenFor(model => model.SortDirection)
+}
+<table id="dataGrid" class="table table-bordered table-striped">
+    <tr>
+        @foreach (var c in Model.Columns)
+        {
+        <th>
+            <a href="#" class="SortLink" data-name="@c" name="SortLink" id="@("Sort" + c)">@c</a><i name="sortArrow"></i>
+        </th>
+        }
+    </tr>
+    @for (int i = 0; i < Model.Report.Rows.Count; i++)
+    {
+        <tr>
+            @for (int j = 0; j < Model.Report.Rows[i].ItemArray.Length; j++)
+            {
+                <td>@Model.Report.Rows[i][j].ToString()</td>
+            }
+        </tr>
+    }
+</table>
+
+
+
+
+

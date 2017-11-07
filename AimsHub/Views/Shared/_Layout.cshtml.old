@@ -1,0 +1,112 @@
+﻿@using AimsHub.Security;
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title - Aims Hub</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @*@Scripts.Render("~/bundles/jquery")*@
+    @Scripts.Render("~/bundles/aimsdefault")
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, shrink-to-fit=no, initial-scale=1">
+
+    <title>Aims Hub</title>
+
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="wrapper" class="navclass">
+        <div id="sidebar-wrapper">
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="@Url.Action("Index", "Home")">
+                        <div style="border-color: royalblue; width: 225px; height: 60px; background-color:  royalblue" class="img-rounded img-responsive">
+                            <img src="~/Images/AIMS_Logo.jpg" class="img-rounded img-responsive" style="width: 205px; height: 75px; margin-left: 5px; margin-right: auto;" />
+                        </div>
+                    </a>
+                </li>
+                <li><hr style="width:50%;" /></li>
+
+                @*PATIENT MANAGEMENT LINKS*@
+                @if (HubSecurity.isAdmin || HubSecurity.isSiteLeader || HubSecurity.isPhysician)
+                {
+                    <li class="sidebar-indent" id="patientLog">@Html.ActionLink("My Patients", "Index", "PatientLog")</li>
+                    if (HubSecurity.isAdmin || HubSecurity.isSiteLeader)
+                    {
+                        <li class="sidebar-indent" id="patientAss">@Html.ActionLink("Patient Assignment", "Index", "PatientAssignment")</li>
+                    }
+                    <li class="sidebar-indent" id="patientCom">@Html.ActionLink("Manage Communications", "Index", "PCPCommunication")</li>
+                    <li><hr style="width:50%;" /></li>
+                }
+
+                @*BILLING LINKS*@
+                @if (HubSecurity.isAdmin || HubSecurity.isBilling)
+                {
+                    <li class="sidebar-indent" id="Billing">@Html.ActionLink("Billing Main", "Index", "Billing")</li>
+                    <li class="sidebar-indent" id="BillingC">@Html.ActionLink("Billing Correction", "Correction", "Billing")</li>
+                    <li class="sidebar-indent" id="BillingP">@Html.ActionLink("Billing Purge", "Purge", "Billing")</li>
+                    <li><hr style="width:50%;" /></li>
+                }
+
+                @*REFERRING PRACTICE LINKS*@
+                @if (HubSecurity.isAdmin)
+                {
+                    <li class="sidebar-indent" id="Prc">@Html.ActionLink("Manage Practices", "Index", "ReferringPractice")</li>
+                    <li class="sidebar-indent" id="Pcp">@Html.ActionLink("Manage PCPs", "Index", "ManagePCPs")</li>
+                    <li><hr style="width:50%;" /></li>
+                }
+
+                @*SITELEADER LINKS*@
+                @if (HubSecurity.isAdmin || HubSecurity.isSiteLeader)
+                {
+                    <li class="sidebar-indent" id="Phy">@Html.ActionLink("Manage Physicians", "Index", "ManagePhysicians")</li>
+                    <li><hr style="width:50%;" /></li>
+                }
+
+                @*ADMIN LINKS*@
+                @if (HubSecurity.isAdmin)
+                {
+                    @*<li class="sidebar-indent" id="Usr">@Html.ActionLink("Manage Users", "Index", "ManageUsers")</li>*@
+                    <li>
+                        <a href="@Url.Action("Index","Admin")" type="text/html" class="navbar-text" style="width: 90%;"><u>Admin Area</u>&nbsp;&nbsp;&nbsp;<span aria-hidden="true" class="glyphicon glyphicon-wrench"></span></a>
+                    </li>
+                }
+
+                @*CHANGE PASSWORD*@
+                <li>
+                    <a href="@Url.Action("Change","Login")" type="text/html" class="navbar-text" style="text-decoration: underline;">Change Password</a>
+                </li>
+
+                @*LOGOUT*@
+                <li>
+                    <a type="button" class="btn btn-warning btn-xs navbar-text" href="@Url.Action("Logoff","Login")"
+                           style="background-color: red; color: white; font-size: small; font-weight: bold; margin-left:20px;" 
+                           id="logoutButton">Log Out</a>
+                </li>
+
+            </ul>
+        </div>
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <div>
+                    @RenderBody()
+                    <hr />
+                    <footer>
+                        <div>
+                            <h5>&copy; 2017 - Emcomps</h5>
+                        </div>
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    @*<script src="~/Scripts/bootstrap.min.js"></script>
+    @RenderSection("scripts", required: false)*@
+
+</body>
+
+</html>

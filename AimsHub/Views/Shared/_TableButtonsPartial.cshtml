@@ -1,0 +1,35 @@
+﻿@model AimsHub.Models.SmallButtonModel
+@using AimsHub.Models
+
+    <div class="btn-group" role="group" aria-label="@Guid.NewGuid()">
+        @Html.Partial("_SmallButtonPartial", new SmallButtonModel
+   {
+       Action = "Edit",
+       ButtonType = "btn-success",
+       Glyph = "pencil",
+       Text = "",
+       Id = Model.Id,
+       ToolTip = "Edit",
+       Name = "Edit"
+   })
+        @Html.Partial("_SmallButtonPartial", new SmallButtonModel
+   {
+       Action = "Copy",
+       ButtonType = "btn-primary",
+       Glyph = "copy",
+       Text = "",
+       Id = Model.Id,
+       ToolTip = "Copy",
+       Name = "Copy"
+   })
+        @Html.Partial("_SmallButtonPartial", new SmallButtonModel
+   {
+       Action = "Delete",
+       ButtonType = "btn-danger",
+       Glyph = "trash",
+       Text = "",
+       Id = Model.Id,
+       ToolTip = "Delete",
+       Name = "Delete"
+   })
+    </div>

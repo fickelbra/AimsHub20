@@ -1,0 +1,263 @@
+﻿
+.textdate {
+    padding: 2px;
+    width: 150px;
+    margin-bottom: 10px;
+    font-size: 1.0em;
+    font-weight: normal;
+    text-shadow: 1px 0 1px #fff;
+    background: #f2f4f5;
+    border: 1px solid rgb(27,145,255);
+    -webkit-border-radius: 2px;
+    -moz-border-radius: 2px;
+    border-radius: 2px;
+    -webkit-box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+    -moz-box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+    /*box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);*/
+    box-shadow: 2px 2px 2px #888888;
+    -webkit-transition: all 0.4s linear;
+    -moz-transition: all 0.4s linear;
+    transition: all 0.4s linear;
+}        
+
+.boxsizingBorder {
+    -webkit-box-sizing: border-box;
+       -moz-box-sizing: border-box;
+            box-sizing: border-box;
+}
+
+.griddate {
+    padding: 2px;
+    width: 100px;
+    font-size: 1.0em;
+    font-weight: normal;
+    text-shadow: 1px 0 1px #fff;
+    -webkit-border-radius: 2px;
+    -moz-border-radius: 2px;
+    border-radius: 2px;
+    -webkit-box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+    -moz-box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+    box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+    -webkit-transition: all 0.4s linear;
+    -moz-transition: all 0.4s linear;
+    transition: all 0.4s linear;
+}
+
+th#ServiceDate {
+    width: 50px;
+}
+
+td#ServiceDate {
+    width: 90px;
+}
+
+th#Hosp {
+    width: 100px;
+}
+
+td#Hosp {
+    width: 100px;
+    height: 35px;
+}
+
+th#Physician {
+    width: 100px;
+}
+
+td#Physician {
+    width: 100px;
+    height: 35px;
+}
+
+th#PCP {
+    width: 190px;
+}
+
+td#PCP {
+    width: 190px;
+    height: 35px;
+}
+
+th#Patient {
+    width: 190px;
+}
+
+td#Patient {
+    width: 190px;
+}
+
+th#MRN {
+    width: 110px;
+}
+
+td#MRN {
+    width: 110px;
+}
+
+th#Room {
+    width: 90px;
+}
+
+td#Room {
+    width: 90px;
+}
+
+th#DOB {
+    width: 90px;
+}
+
+td#DOB {
+    width: 90px;
+}
+
+th#Gender {
+    width: 70px;
+}
+
+td#Gender {
+    width: 70px;
+    height: 35px;
+}
+
+th#ServiceType {
+    width: 120px;
+}
+
+td#ServiceType {
+    width: 120px;
+    height: 35px;
+}
+
+th#Notes {
+    width: 200px;
+}
+
+td#Notes {
+    width: 200px;
+}
+
+.ServiceDate {
+    width: 80px;
+}
+
+.Hosp {
+    width: 90px;
+    height: 35px;
+}
+
+.PCP {
+    width: 190px;
+    height: 35px;
+}
+
+.Patient {
+    width: 170px;
+}
+
+.MRN {
+    width: 110px;
+}
+
+
+.Room {
+    width: 90px;
+}
+
+.DOB {
+    width: 90px;
+}
+
+
+.Gender {
+    width: 85px;
+    height: 35px;
+}
+
+.ServiceType {
+    width: 120px;
+    height: 35px;
+}
+.Notes {
+    width: 100px;
+}
+tr.grid-empty-text {
+    font-weight: bolder;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    font-size: xx-large;
+}
+.AIMSBanner {
+    width: 100%;
+    background-color: royalblue;
+    color: white;
+    font-weight: bold;
+    font-size: large;
+    display: inline-block;
+    text-align: center;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-top: 3px solid white;
+    margin-bottom: 20px;
+}
+.noTitleBar .ui-dialog-titlebar {
+    display: none;
+}
+.tabs-centre .ui-tabs-nav {
+    height: 2.35em;
+    text-align: center;
+}
+
+.tabs-centre .ui-tabs-nav li {
+    display: inline-block;
+    float: none;
+    top: 0px;
+    margin: 0em;
+    padding-bottom: 0px;
+}
+
+.tabs-nohdr {
+    padding: 0px;
+    background: none;
+    border-width: 0px;
+}
+
+.tabs-nohdr .ui-tabs-nav {
+    padding: 0px;
+    background: transparent;
+    -moz-border-radius: 0px;
+    -webkit-border-radius: 0px;
+    border-radius: 0px;
+}
+
+.tabs-nohdr .ui-widget-header {
+    border: 0px;
+}
+
+.tabs-nohdr .ui-tabs-widget {
+    padding: 0;
+}
+
+.tabs-smaller .ui-tabs-nav li {
+    margin-top: 0.6em;
+    font-size: 80%;
+}
+
+.tabs-smaller .ui-tabs-nav li.ui-tabs-selected,
+.tabs-smaller .ui-tabs-nav li.ui-state-active {
+    margin-top: 0em;
+    font-size: 100%;
+}
+.filterSelect {
+    width: 60px;
+}
+.SortLink {
+    text-decoration: underline;
+}
+.patientGrid th {
+    background-color: royalblue;
+    color: white;
+}
+i[name=sortArrow] {
+    float: right;
+}

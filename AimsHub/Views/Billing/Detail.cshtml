@@ -1,0 +1,629 @@
+﻿@model BillingDetailsViewModel
+@using AimsHub.ViewModels;
+
+@{
+    ViewBag.Title = "Billing Details";
+    List<int> idList = (List<int>)Session["billingListOfID"];
+    int indexer = Model.Indexer;
+    int indexerDisplay = Model.IndexerDisplay;
+    int safeIndexerPrev = Model.SafeIndexerPrev; //Required to avoid out of range exceptions at page load as it parses the Razer code
+    int safeIndexerNext = Model.SafeIndexerNext; //Required to avoid out of range exceptions at page load as it parses the Razer code
+}
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        //Disable Notes Copied checkbox if Notes Completed is not selected
+        if ($('#BillingRecord_checkboxNotesCompleted:checked').is('checked'))
+        {
+            $('#BillingRecord_checkboxNotesCopied').attr('disabled', true);
+        }
+
+        $("#CPTPopup").dialog({
+            autoOpen: false,
+            show: 'explode',
+            resizable: true,
+            draggable: true,
+            title: "CPT Codes",
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            position: { my: "top", at: "top", of: $('#tabs') }
+        });
+        $("#POSPopup").dialog({
+            autoOpen: false,
+            show: 'explode',
+            resizable: true,
+            draggable: true,
+            title: "POS Codes",
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            position: { my: "top", at: "top", of: $('#tabs') }
+        });
+        $("#MODPopup").dialog({
+            autoOpen: false,
+            show: 'explode',
+            resizable: true,
+            draggable: true,
+            title: "MOD Codes",
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            position: { my: "top", at: "top", of: $('#tabs') }
+        });
+        $("#DXPopup").dialog({
+            autoOpen: false,
+            show: 'explode',
+            resizable: true,
+            draggable: true,
+            title: "DX Codes",
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            position: { my: "top", at: "top", of: $('#tabs') }
+        });
+        $("#MissingNotesPopup").dialog({
+            autoOpen: false,
+            show: 'explode',
+            resizable: true,
+            draggable: true,
+            title: "Missing Notes",
+            height: 'auto',
+            width: '700px',
+            modal: true,
+            position: { my: "top", at: "top", of: $('#tabs') }
+        });
+        $('[name=CancelChanges]').on('click', function () {
+            location.reload();
+        });
+
+        $('#btnAddCptCodes').on('click', function () {
+            var origText = $('#BillingRecord_CPTCodes').val();
+            var appendText = "";
+            var newText;
+            $('.cptcheck').each(function () {
+                if (this.checked == true) {
+                    appendText += this.value + "\n";
+                }
+            });
+
+            var newText = appendText + origText;
+            $('#BillingRecord_CPTCodes').val(newText);
+            hideCPT();
+        });
+        $('#btnAddPosCodes').on('click', function () {
+            var origText = $('#BillingRecord_POSCodes').val();
+            var appendText = "";
+            var newText;
+            $('.poscheck').each(function () {
+                if (this.checked == true) {
+                    appendText += this.value + "\n";
+                }
+            });
+
+            var newText = appendText + origText;
+            $('#BillingRecord_POSCodes').val(newText);
+            hidePOS();
+        });
+        $('#btnAddModCodes').on('click', function () {
+            var origText = $('#BillingRecord_MODCodes').val();
+            var appendText = "";
+            var newText;
+            $('.modcheck').each(function () {
+                if (this.checked == true) {
+                    appendText += this.value + "\n";
+                }
+            });
+
+            var newText = appendText + origText;
+            $('#BillingRecord_MODCodes').val(newText);
+            hideMOD();
+        });
+        $('#btnAddDxCodes').on('click', function () {
+            var origText = $('#BillingRecord_DXCodes').val();
+            var appendText = "";
+            var newText;
+            $('.dxcheck').each(function () {
+                if (this.checked == true) {
+                    appendText += this.value + "\n";
+                }
+            });
+
+            var newText = appendText + origText;
+            $('#BillingRecord_DXCodes').val(newText);
+            hideDX();
+        });
+    });
+
+    function getRecord() {
+        var record = {
+            ID: $('#BillingRecord_ID').val(),
+            PLRecord: $('#BillingRecord_PLRecord').val(),
+            //NotesCompleted: $('#BillingRecord_NotesCompleted').val(),
+            NotesCompleted: $('#BillingRecord_checkboxNotesCompleted').is('checked'),
+            CodingCompleted: $('#BillingRecord_checkboxCodingCompleted').is('checked'),
+            NotesCopied: $('#BillingRecord_checkboxNotesCopied').is('checked'),
+            ChargePosted: $('#BillingRecord_checkboxChargePosted').is('checked'),
+            FaceSheetEntered: $('#BillingRecord_checkboxFaceSheetEntered').is('checked'),
+            CPTCodes: $('#BillingRecord_CPTCodes').val(),
+            POSCodes: $('#BillingRecord_POSCodes').val(),
+            MODCodes: $('#BillingRecord_MODCodes').val(),
+            DXCodes: $('#BillingRecord_DXCodes').val(),
+            Purge: $('#Purge').val()
+        };
+        return record;
+    }
+    function getPatient() {
+        var patient = {
+            ID: $('#BillingRecord_PLRecord').val(),
+            Notes: $('#Patient_Notes').val(),
+            FaceSheet: $('#Patient_FaceSheet').val()
+        };
+        return patient;
+    }
+    $(function () {
+        $('[name=saveOnly]').click(function () {
+            var record = getRecord();
+            $.ajax({
+                url: '/Billing/jsonSubmitRecord',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(record),
+                success: function (response) {
+                    //alert(response);
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                    return; //Cancel code execution if there is an error
+                }
+            });
+            var patient = getPatient();
+            $.ajax({
+                url: '/Billing/jsonSubmitPatient',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(patient),
+                success: function (response) {
+                    if (@indexer  == @idList.Count() - 1)
+                    {
+                        window.location.href = "@Url.Action("Detail", "Billing" , new RouteValueDictionary { { "id", idList[0] } } )";
+                    }
+                    else {
+                        window.location.href = "@Url.Action("Detail", "Billing" , new RouteValueDictionary { { "id", idList[safeIndexerNext] } } )";
+                    }
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        });
+    });
+    $(function () {
+        $('[name=saveAndNext]').click(function () {
+            var record = getRecord();
+            $.ajax({
+                url: '/Billing/jsonSubmitRecord',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(record),
+                success: function (response) {
+                    @*if (@indexer  == @idList.Count() - 1)
+                    {
+                        window.location.href = "@Url.Action("Detail", "Billing" , new RouteValueDictionary { { "id", idList[0] } } )";
+                    }
+                    else {
+                        window.location.href = "@Url.Action("Detail", "Billing" , new RouteValueDictionary { { "id", idList[safeIndexerNext] } } )";
+                    }*@
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                    return;
+                }
+            });
+            var patient = getPatient();
+            $.ajax({
+                url: '/Billing/jsonSubmitPatient',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(patient),
+                success: function (response) {
+                    if (@indexer  == @idList.Count() - 1)
+                    {
+                        window.location.href = "@Url.Action("Detail", "Billing" , new RouteValueDictionary { { "id", idList[0] } } )";
+                    }
+                    else {
+                        window.location.href = "@Url.Action("Detail", "Billing" , new RouteValueDictionary { { "id", idList[safeIndexerNext] } } )";
+                    }
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        });
+    });
+    function showCPT()
+    {
+        $('#CPTPopup').dialog('open');
+    }
+    function hideCPT() {
+        $('#CPTPopup').dialog('close');
+    }
+    function showPOS() {
+        $('#POSPopup').dialog('open');
+    }
+    function hidePOS() {
+        $('#POSPopup').dialog('close');
+    }
+    function showMOD() {
+        $('#MODPopup').dialog('open');
+    }
+    function hideMOD() {
+        $('#MODPopup').dialog('close');
+    }
+    function showDX() {
+        $('#DXPopup').dialog('open');
+    }
+    function hideDX() {
+        $('#DXPopup').dialog('close');
+    }
+    function showMissingNotes() {
+        $('#MissingNotesPopup').dialog('open');
+    }
+    function hideMissingNotes() {
+        $('#MissingNotesPopup').dialog('close');
+    }
+</script>
+
+<style type="text/css">
+    .LabelText {
+        color: black;
+        font-weight: bolder;
+        margin-right: 2px;
+    }
+
+    .tabs-centre .ui-tabs-nav {
+        height: 2.35em;
+        text-align: center;
+    }
+
+        .tabs-centre .ui-tabs-nav li {
+            display: inline-block;
+            float: none;
+            top: 0px;
+            margin: 0em;
+            padding-bottom: 0px;
+        }
+
+    .tabs-nohdr {
+        padding: 0px;
+        background: none;
+        border-width: 0px;
+    }
+
+    .tabs-nohdr .ui-tabs-nav {
+        padding: 0px;
+        background: transparent;
+        -moz-border-radius: 0px;
+        -webkit-border-radius: 0px;
+        border-radius: 0px;
+    }
+        .tabs-nohdr .ui-widget-header {
+            border: 0px;
+        }
+
+    .tabs-nohdr .ui-tabs-widget {
+        padding: 0;
+    }
+    .tabs-smaller .ui-tabs-nav li {
+        margin-top: 0.6em;
+        font-size: 80%;
+    }
+
+    .tabs-smaller .ui-tabs-nav li.ui-tabs-selected,
+    .tabs-smaller .ui-tabs-nav li.ui-state-active {
+        margin-top: 0em;
+        font-size: 100%;
+    }
+
+    button[name=CancelChanges] {
+        background-color: darkgrey;
+        border-color: red;
+    }
+
+    button[name=CancelChanges]:hover {
+        background-color: darkgrey;
+        border-color: red;
+    }
+    .noTitleBar .ui-dialog-titlebar {
+        display: none;
+    }
+
+</style>
+
+<div class="AIMSBanner">
+    Billing Details View
+</div>
+@Html.HiddenFor(h => h.BillingRecord.PLRecord, null)
+@Html.HiddenFor(h => h.BillingRecord.ID, null)
+
+<span class="col-lg-12" style="background-color: lemonchiffon;">
+    <span class="col-lg-3"><span class="LabelText">@Html.DisplayNameFor(model => model.Patient.PatientName)</span>: @Html.DisplayFor(model => model.Patient.PatientName)</span>
+    <span class="col-lg-2"><span class="LabelText">@Html.DisplayNameFor(model => model.Patient.Gender)</span>: @Html.DisplayFor(model => model.Patient.Gender)</span>
+    <span class="col-lg-2"><span class="LabelText">@Html.DisplayNameFor(model => model.Patient.DOB)</span>: @Html.DisplayFor(model => model.Patient.DOB)</span>
+    <span class="col-lg-2"><span class="LabelText">@Html.DisplayNameFor(model => model.Patient.MRN_FIN)</span>: @Html.DisplayFor(model => model.Patient.MRN_FIN)</span>
+    <span class="col-lg-2"><span class="LabelText">@Html.DisplayNameFor(model => model.Patient.Physician)</span>: @Html.DisplayFor(model => model.Patient.Physician)</span>
+</span>
+<span class="col-lg-12" style="background-color: lemonchiffon;">
+    <span class="col-lg-3"><span class="LabelText">@Html.DisplayNameFor(model => model.Patient.Hospital)</span>: @Html.DisplayFor(model => model.Patient.Hospital)</span>
+    <span class="col-lg-2"><span class="LabelText">@Html.DisplayNameFor(model => model.Patient.ServiceDate)</span>: @Html.DisplayFor(model => model.Patient.ServiceDate)</span>
+    <span class="col-lg-2"><span class="LabelText">@Html.DisplayNameFor(model => model.Patient.ServiceType)</span>: @Html.DisplayFor(model => model.Patient.ServiceType)</span>
+</span>
+<span class="col-lg-12" style="background-color: lemonchiffon;">
+    <span class="col-lg-3 yesno"><span class="LabelText">@Html.DisplayNameFor(model => model.BillingRecord.NotesCompleted)</span>: @Model.BillingRecord.viewNotesCompleted()</span>
+    <span class="col-lg-2 yesno"><span class="LabelText">@Html.DisplayNameFor(model => model.BillingRecord.NotesCopied)</span>: @Model.BillingRecord.viewNotesCopied()</span>
+    <span class="col-lg-2 yesno"><span class="LabelText">@Html.DisplayNameFor(model => model.BillingRecord.CodingCompleted)</span>: @Model.BillingRecord.viewCodingCompleted()</span>
+    <span class="col-lg-2 yesno"><span class="LabelText">@Html.DisplayNameFor(model => model.BillingRecord.ChargePosted)</span>: @Model.BillingRecord.viewChargePosted()</span>
+    <span class="col-lg-2 yesno"><span class="LabelText">@Html.DisplayNameFor(model => model.BillingRecord.FaceSheetEntered)</span>: @Model.BillingRecord.viewFaceSheetEntered()</span>
+</span>
+<span class="col-lg-12" style="margin-top: 20px;">
+    <span class="col-lg-4" style="float: left;">
+        <button value="Save And Next" name="saveAndNext" class="btn btn-success btn-sm">Save And Next</button>
+        @if (indexer != 0)
+        {
+            <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Detail", new { id = idList[indexer - 1] })" name="previousButton">
+                <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                <span>Previous</span>
+            </a>
+        }
+        else
+        {
+            <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Detail", new { id = idList[idList.Count() - 1] })" name="previousButton">
+                <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                <span>Previous</span>
+            </a>
+        }
+
+        @if (indexer != idList.Count() - 1)
+        {
+            <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Detail", new { id = idList[indexer + 1] })" name="nextButton">
+                <span>Next</span>
+                <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+            </a>
+        }
+        else
+        {
+            <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Detail", new { id = idList[0] })" name="nextButton">
+                <span>Next</span>
+                <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+            </a>
+        }
+        <button value="Cancel" name="CancelChanges" class="btn btn-primary btn-sm">Cancel</button>
+    </span>
+    <span class="col-lg-4 col-lg-offset-1">
+        <span><span class="LabelText">Record:</span> @indexerDisplay of @idList.Count()</span>
+    </span>
+    <span class="col-lg-3">
+        <a type="button" class="btn btn-primary btn-sm" style="margin-right: 5px; float: right;" href="@Url.Action("Index", "Billing",  new RouteValueDictionary { { "grid-column", Request.QueryString["grid-column"]  }, { "grid-dir", Request.QueryString["grid-dir"] }, { "grid-filter", Request.QueryString["grid-filter"] } }  )">
+            <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+            <span>Back To Billing</span>
+        </a>
+    </span>
+</span>
+<span id="tabs" class="col-lg-12 tabs-centre tabs-nohdr tabs-smaller" style="margin-top: 10px; height: 644px;">
+    <ul>
+        <li><a href="#tabs-1">Notes / Coding</a></li>
+        <li><a href="#tabs-2">FaceSheet</a></li>
+    </ul>
+    <div id="tabs-1">
+        <span class="col-lg-12">
+            @Html.TextAreaFor(model => model.Patient.Notes, new { @class = "form-control", style = "width: 100%; height: 400px; overflow-y: auto; margin-bottom: 5px;" })
+        </span>
+        <span class="col-lg-12">
+            <span class="col-lg-offset-4">
+                @Html.CheckBoxFor(model => model.BillingRecord.checkboxNotesCompleted) @Html.LabelFor(model => model.BillingRecord.checkboxNotesCompleted)
+                @Html.CheckBoxFor(model => model.BillingRecord.checkboxNotesCopied) @Html.LabelFor(model => model.BillingRecord.checkboxNotesCopied)
+                <button id="btnMissingNotesPopup" onclick="javascript:showMissingNotes()" value="Send Missing Note Email">Send Missing Note Email</button>
+            </span>
+        </span>
+        <span class="col-lg-12" style="margin-top: 5px;">
+            <span style="width: 20%; float: left;">
+                <button id="btnAddCPTPopup" value="Add CPT Codes" onclick="javascript:showCPT()">Add CPT Codes</button>
+            </span>
+            <span style="width: 20%; float: left;">
+                <button id="btnAddPOSPopup" value="Add POS Codes" onclick="javascript:showPOS()">Add POS Codes</button>
+            </span>
+            <span style="width: 20%; float: left;">
+                <button id="btnAddMODPopup" value="Add MOD Codes" onclick="javascript:showMOD()">Add MOD Codes</button>
+            </span>
+            <span style="width: 20%; float: left;">
+                <button id="btnAddDXPopup" value="Add DX Codes" onclick="javascript:showDX()">Add DX Codes</button>
+            </span>
+            <span style="width: 20%; float: left;">
+                <strong>AIMS Comments</strong>
+            </span>
+        </span>
+        <span class="col-lg-12">
+            <span style="width: 20%; float: left;">
+                @Html.TextAreaFor(model => model.BillingRecord.CPTCodes, new { style = "height: 100px; width: 95%;" })
+            </span>
+            <span style="width: 20%; float: left;">
+                @Html.TextAreaFor(model => model.BillingRecord.POSCodes, new { style = "height: 100px; width: 95%;" })
+            </span>
+            <span style="width: 20%; float: left;">
+                @Html.TextAreaFor(model => model.BillingRecord.MODCodes, new { style = "height: 100px; width: 95%;" })
+            </span>
+            <span style="width: 20%; float: left;">
+                @Html.TextAreaFor(model => model.BillingRecord.DXCodes, new { style = "height: 100px; width: 95%;" })
+            </span>
+            <span style="width: 20%; float: left;">
+                @Html.TextAreaFor(model => model.Patient.AIMSComments, new { @readonly = true, style = "height: 100px; width: 95%;" })
+            </span>
+        </span>
+        <span class="col-lg-12">
+            <span class="col-lg-offset-4">
+                @Html.CheckBoxFor(model => model.BillingRecord.checkboxCodingCompleted) @Html.LabelFor(model => model.BillingRecord.checkboxCodingCompleted)
+                @Html.CheckBoxFor(model => model.BillingRecord.checkboxChargePosted) @Html.LabelFor(model => model.BillingRecord.checkboxChargePosted)
+            </span>
+            <span class="col-lg-4" style="float: right;">
+                @Html.CheckBoxFor(model => model.BillingRecord.checkboxPurge) @Html.LabelFor(model => model.BillingRecord.checkboxPurge, new { style = "color: red" })
+            </span>
+        </span>
+    </div>
+    <div id="tabs-2">
+        <span class="col-lg-12">
+            @Html.TextAreaFor(model => model.Patient.FaceSheet, new { @class = "form-control", style = "width: 100%; height: 550px; overflow-y: auto;" })
+        </span>
+        <span class="col-lg-12" style="margin-right: auto; margin-left: auto; text-align: center;">
+            @Html.CheckBoxFor(model => model.BillingRecord.checkboxFaceSheetEntered) @Html.LabelFor(model => model.BillingRecord.checkboxFaceSheetEntered)
+        </span>
+    </div>
+</span>
+<span class="col-lg-12" style="margin-top: 15px; margin-bottom: 10px;">
+    <span class="col-lg-4">
+        <a type="button" class="btn btn-primary btn-sm" style="margin-right: 5px; float: left;" href="@Url.Action("Index", "Billing",  new RouteValueDictionary { { "grid-column", Request.QueryString["grid-column"]  }, { "grid-dir", Request.QueryString["grid-dir"] }, { "grid-filter", Request.QueryString["grid-filter"] } }  )">
+            <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+            <span>Back To Billing</span>
+        </a>
+    </span>
+    <span class="col-lg-5">
+        <button value="Save" name="saveOnly" class="btn btn-success btn-sm">Save</button>
+        <button value="Save And Next" name="saveAndNext" class="btn btn-success btn-sm">Save And Next</button>
+        @if (indexer != 0)
+        {
+            <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Detail", new { id = idList[indexer - 1] })" name="previousButton">
+                <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                <span>Previous</span>
+            </a>
+        }
+        else
+        {
+            <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Detail", new { id = idList[idList.Count() - 1] })" name="previousButton">
+                <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                <span>Previous</span>
+            </a>
+        }
+
+        @if (indexer != idList.Count() - 1)
+        {
+            <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Detail", new { id = idList[indexer + 1] })" name="nextButton">
+                <span>Next</span>
+                <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+            </a>
+        }
+        else
+        {
+            <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Detail", new { id = idList[0] })" name="nextButton">
+                <span>Next</span>
+                <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+            </a>
+        }
+        <button value="Cancel" name="CancelChanges" class="btn btn-primary btn-sm">Cancel</button>
+    </span>
+    <span class="col-lg-3">
+        <span><span class="LabelText">Record:</span> @indexerDisplay of @idList.Count()</span>
+    </span>   
+</span>
+
+@*Popups ----------*@
+<div id="CPTPopup">
+    <div style="height: 500px; overflow-y: auto;">
+        <input type="checkbox" value="ALL" id="chkcptAll" onclick="javascript:toggleCpt(this)" /><strong>ALL</strong><br />
+        @{foreach (SelectListItem code in Model.CPTCodesList)
+            {
+                <input type="checkbox" class="cptcheck" onclick="javascript:selectCPT()" value="@code.Value" />@code.Text <br />
+            }
+        }
+        <span class="col-lg-12">
+            <span class="col-lg-6">
+                <button id="btnAddCptCodes" value="Add CPT Codes">Add CPT Codes</button>
+            </span>
+            <span class="col-lg-6">
+                <button id="btnCancelCptCodes" onclick="javascript:hideCPT()" value="Cancel">Cancel</button>
+            </span>
+        </span>
+    </div>
+</div>
+<div id="POSPopup">
+    <div style="height: 500px; overflow-y: auto;">
+        <input type="checkbox" value="ALL" id="chkposAll" onclick="javascript:togglePos(this)" /><strong>ALL</strong><br />
+        @{foreach (SelectListItem code in Model.POSCodesList)
+            {
+                <input type="checkbox" class="poscheck" onclick="javascript:selectPOS()" value="@code.Value" />@code.Text <br />
+            }
+        }
+        <span class="col-lg-12">
+            <span class="col-lg-6">
+                <button id="btnAddPosCodes" value="Add POS Codes">Add POS Codes</button>
+            </span>
+            <span class="col-lg-6">
+                <button id="btnCancelPosCodes" onclick="javascript:hidePOS()" value="Cancel">Cancel</button>
+            </span>
+        </span>
+    </div>
+</div>
+<div id="MODPopup">
+    <div style="height: 500px; overflow-y: auto;">
+        <input type="checkbox" value="ALL" id="chkmodAll" onclick="javascript:toggleMod(this)" /><strong>ALL</strong><br />
+        @{foreach (SelectListItem code in Model.MODCodesList)
+            {
+                <input type="checkbox" class="modcheck" onclick="javascript:selectMOD()" value="@code.Value" />@code.Text <br />
+            }
+        }
+        <span class="col-lg-12">
+            <span class="col-lg-6">
+                <button id="btnAddModCodes" value="Add MOD Codes">Add MOD Codes</button>
+            </span>
+            <span class="col-lg-6">
+                <button id="btnCancelModCodes" onclick="javascript:hideMOD()" value="Cancel">Cancel</button>
+            </span>
+        </span>
+    </div>
+</div>
+<div id="DXPopup">
+    <span class="col-lg-12">
+        <span class="col-lg-10 col-lg-offset-1">
+            <strong>Filter Codes:</strong><input type="text" id="txtDXSearch" style="margin-left: 5px;" /><button id="btnDXSearch" value="Go">Go</button>
+        </span>
+    </span>
+    <span class="col-lg-12">
+        <input type="checkbox" value="ALL" id="chkdxAll" onclick="javascript:toggleDx(this)" /><strong>ALL</strong><br />
+        @{foreach (SelectListItem code in Model.MODCodesList)
+            {
+                <input type="checkbox" class="dxcheck" onclick="javascript:selectDX()" value="@code.Value" />@code.Text <br />
+            }
+        }
+    </span>
+    <span class="col-lg-12">
+        <span class="col-lg-6">
+            <button id="btnAddDxCodes" value="Add DX Codes" >Add DX Codes</button>
+        </span>
+        <span class="col-lg-6">
+            <button id="btnCancelDxCodes" onclick="javascript:hideDX()" value="Cancel">Cancel</button>
+        </span>
+    </span>
+</div>
+<div id="MissingNotesPopup">
+    <span class="col-lg-12">
+        <span style="margin-left: auto; margin-right: auto; text-align: center;"><strong><u>Note History</u></strong></span>
+    </span>
+    <span class="col-lg-12">
+        <span id="resultView" style="max-height: 200px; overflow-y: auto; border: 1px solid royalblue; margin-left: auto; margin-right: auto;"></span>
+    </span>
+    <span class="col-lg-12" style="margin-top: 15px;">
+        <span style="margin-left: auto; margin-right: auto; text-align: center;">(Optional) Add text to note</span>
+    </span>
+    <span class="col-lg-12">
+        <textarea id="MissingNoteDescription" style="height: 86px; width: 100%;"></textarea>
+    </span>
+    <span class="col-lg-12" style="margin-top: 10px;">
+        <span class="col-lg-4">
+            <button class="btn btn-primary btn-sm" id="btnSaveNote" value="Save Note" style="width: 60%;">Save Note</button>
+        </span>
+        <span class="col-lg-4">
+            <button class="btn btn-primary btn-sm" id="btnSaveSendNote" value="Save/Send New Note" >Save/Send New Note</button>
+        </span>
+        <span class="col-lg-4">
+            <button class="btn btn-primary btn-sm" id="btnCancel" onclick="javascript:hideMissingNotes()" value="Cancel" style="width: 60%;">Cancel</button>
+        </span>
+    </span>
+</div>

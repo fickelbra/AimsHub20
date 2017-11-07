@@ -1,0 +1,1096 @@
+﻿@model ScheduleWorkAreaViewModel
+@using AimsHub.Models
+@using AimsHub.ViewModels
+@using AimsHub.Security
+@using DayPilot
+@using DayPilot.Web.Mvc
+
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<script src="~/Scripts/daypilot-all.min.js"></script>
+<link href="~/Content/daypilot-classic.css" rel="stylesheet" />
+@{
+    ViewBag.Title = "Schedule Work Area";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    int totalUser = Model.UserList.Count();
+    int totalHosp = Model.HospitalList.Count();
+    int totalType = Model.ScheduleList.Count();
+    int favoriteCount = Model.FavoriteList.Count();
+    string currentDate = DateTime.Now.Year.ToString() + "-" + DateTime.Now.Month.ToString() + "-" + DateTime.Now.Day.ToString(); //Use to identify current date in Daypilot Month and change style
+    string javaBool = Model.OperationCompleted ? "true" : "false";
+    string fav = "";
+    if (Model.FavoriteSelected == null)
+    {
+        fav = "empty";
+    }
+    else
+    {
+        fav = "notempty";
+    }
+ }
+<style type="text/css">
+    .whiteText div {
+        color: white;
+    }
+    .month_default_event_inner {
+        margin-right: auto;
+        margin-left: auto;
+        text-align: center;
+    }
+    input[type=button] {
+        font-weight: bolder;
+    }
+    .btn.btn-default.btn-sm {
+        min-width: 200px;
+        /*background-color: whitesmoke;*/
+    }
+</style>
+<script type="text/javascript">
+    var dpm = new DayPilot.Month("dpm");
+    //dp.contextMenu = new DayPilot.Menu({
+    //    items: [
+    //        { text: "Test", onclick: function () { alert("Event value: " + this.source.value()); } }
+    //        //{ text: "Show event text", onclick: function () { alert("Event text: " + this.source.text()); } },
+    //        //{ text: "Show event start", onclick: function () { alert("Event start: " + this.source.start().toStringSortable()); } },
+    //        //{ text: "Delete", onclick: function () { dp.events.remove(this.source); } }
+    //    ]
+    //}); 
+    //dp.init();
+    $(document).ready(function () {
+        //This function allows the modal popups on this page to be closed when clicked outside of them
+        $('body').bind('click', function (e) {
+            if (!$(e.target).is('.ui-dialog, li') && !$(e.target).closest('.ui-dialog').length && !$(e.target).is('[name=txtpopup]')) {
+                $('[name=NonModalPopup]').each(function () {
+                    if ($(this).dialog('isOpen')) {
+                        $(this).dialog('close');
+                    }
+                });
+            }
+        }
+        );
+        //This allows the filter popups to be dismissed by clicking outside of them in the Operation Popup
+        $('#OperationPopup').bind('click', function (e) {
+            if (!$(e.target).is('[name=txtpopup]')) {
+                $('[name=NonModalPopup]').each(function () {
+                    if ($(this).dialog('isOpen')) {
+                        $(this).dialog('close');
+                    }
+                });
+            }
+        }
+        );
+        //Tally button setup
+        $('[name=TallyButton]').click(function (e) {
+            e.preventDefault();
+            var users = $('#hidUsers').val();
+            var hospitals = $('#hidHospitals').val();
+            var start = $('#txtOperationStartDate').val();
+            var end = $('#txtOperationEndDate').val();
+            var operation = $(this).val();
+            window.open('@Url.Action("Tally","Schedule")' + '/?users=' + users + '&hospitals=' + hospitals + '&start=' + start + '&end=' + end + '&operation=' + operation, "_blank", "resizable=yes,scrollbars=yes,toolbar=yes,width=400,height=300");
+        });
+        //Instantiates popup parameters
+        $('#NavigatorPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Select date",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            dialogClass: "noTitleBar",
+            position: { my: "top", at: "bottom", of: $('#SelectedDate') }
+        });
+        $('#UsersPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Users",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            dialogClass: "noTitleBar"
+            //position: { my: "top", at: "bottom", of: $('#txtUsers') }
+        });
+        $('#HospitalsPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Hospitals",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            dialogClass: "noTitleBar"
+            //position: { my: "top", at: "bottom", of: $('#txtHospitals') }
+        });
+        $('#ScheduleTypesPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Service Types",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            dialogClass: "noTitleBar"
+            //position: { my: "top", at: "bottom", of: $('#txtScheduleTypes') }
+        });
+
+        $('#OperationPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: false,
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            dialogClass: "noTitleBar",
+            close: function () { closeOperations(); },
+            position: { my: "center", at: "center", of: window }
+        });
+
+        $('#AddFavoritePopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: false,
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            dialogClass: "noTitleBar",
+            position: { my: "center", at: "center", of: window }
+        });
+
+        $('#FavoriteManagerPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: false,
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            dialogClass: "noTitleBar",
+            position: { my: "center", at: "center", of: window }
+        });
+
+        //This will only be true if the page is returning from an "operation" (mass edit, finalize, delete, etc)
+        if (@javaBool  == true)
+        {
+            $('#CommandRow').css('display', 'none');
+            $('#FilterRow').css('display', 'none');
+            $('#ResultRow').css('display', 'inherit');
+            $('#OperationPopup').dialog('open');
+        }
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedUsers));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.usercheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+        checkboxHiddenUpdate($('#hidUsers'), 'usercheck');
+
+        var hospmax = @totalUser; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == hospmax || max == 0) {
+            $('#chkuserAll').prop('checked', true);
+            $('#txtUsers').val('ALL');
+            $('#txtOperationUsers').val('ALL');
+            $('.usercheck').each(function () {
+                this.checked = 'checked';
+            });
+            $('#hidUsers').val('');
+        }
+
+
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedHospitals));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.hospcheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+        checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+
+        var hospmax = @totalHosp;
+        if (max == hospmax || max == 0) {
+            $('#chkhospAll').prop('checked', true);
+            $('#txtHospitals').val('ALL');
+            $('#txtOperationHospitals').val('ALL');
+            $('.hospcheck').each(function () {
+                this.checked = 'checked';
+            });
+            $('#hidHospitals').val('');
+        }
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedSchedules));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.typecheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+        checkboxHiddenUpdate($('#hidTypes'), 'typecheck');
+
+        var servmax = @totalType;
+        if (max == servmax || max == 0) {
+            $('#chktypeAll').prop('checked', true);
+            $('#txtScheduleTypes').val('ALL');
+            $('#txtOperationScheduleTypes').val('ALL');
+            $('.typecheck').each(function () {
+                this.checked = 'checked';
+            });
+            $('#hidTypes').val('');
+        }
+
+        if ("@fav" == "empty")
+        {
+            $("#FavoriteSelected").val($("#FavoriteSelected option:first").val());
+        }
+    });
+    function setupDayPilot() {
+        $('.classic_cell_inner:not(.bound)').each(function () {
+            $(this).addClass('bound'); //This line is needed to stop DayPilot from binding click events every time a DayPilotModal is closed, resulting in it running this function again
+            $(this).click(function () {
+                var skip = false;
+                $('[name=NonModalPopup]').each(function () {
+                    if ($(this).dialog('isOpen'))
+                    {
+                        skip = true;
+                    }
+                });
+                if (!skip) {
+                    var modal = new DayPilot.Modal();
+                    modal.closed = function () {
+                        dpm.commandCallBack('refresh');
+                    };
+                    modal.top = 100;
+                    modal.autoStretch = true;
+                    modal.height = 520;
+                    var date = $(this).attr('date');
+                    var stop = date.indexOf('T');
+                    date = date.substring(0, stop);
+                    var user;
+                    $('.usercheck').each(function () {
+                        if (this.checked)
+                        {
+                            user = $(this).val();
+                            return false;
+                        }
+                    });
+
+                    var hosp;
+                    $('.hospcheck').each(function () {
+                        if (this.checked) {
+                            hosp = $(this).val();
+                            return false;
+                        }
+                    });
+
+                    modal.showUrl("@Url.Action("Create","Schedule")" + "?date=" + date + "&user=" + user + "&hosp=" + hosp);
+                }
+            });
+
+            //Identify current date and change style
+            var date = $(this).attr('date');
+            var compDate = date.substring(0, date.indexOf('T'));
+            if (compDate == "@currentDate")
+            {
+                $(this).parent().addClass('currentDay');
+                //$(this).children('.classic_cell_header').addClass('currentDay');
+            }
+        });
+    }
+    function edit(id)
+    {
+        var modal = new DayPilot.Modal();
+        modal.closed = function () {
+            dpm.commandCallBack('refresh');
+        };
+        modal.top = 100;
+        modal.showUrl("@Url.Action("Edit","Schedule")" + "?id=" + id);
+    }
+    function deleteRecord(theID)
+    {
+        if (confirm('Are you sure you wish to delete this schedule event?'))
+        {
+            $.ajax({
+                url: '/Schedule/jsonDeleteRecord',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify({ id: theID }),
+                success: function (response) {
+                    dpm.commandCallBack('refresh');
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        }
+        else {
+
+        }
+    }
+    function checkboxHiddenUpdate(hid, className) {
+        var data = [];
+        $('.' + className).each(function () {
+            if (this.checked) {
+                //if (className == "usercheck")
+                //{
+                //    var str = this.value;
+                //    data.push(str.substring(1));
+                //}
+                //else {
+                    data.push(this.value);
+                //}
+
+            }
+        });
+        hid.val(data);
+        if (className == "usercheck") {
+            if (data.length == 0) {
+                $('#txtUsers').val('ALL');
+                $('#txtOperationUsers').val('ALL');
+            }
+            else {
+                $('#txtUsers').val(data);
+                $('#txtOperationUsers').val(data);
+            }
+        }
+        if (className == "hospcheck") {
+            if (data.length == 0) {
+                $('#txtHospitals').val('ALL');
+                $('#txtOperationHospitals').val('ALL');
+            }
+            else {
+                $('#txtHospitals').val(data);
+                $('#txtOperationHospitals').val(data);
+            }
+        }
+        if (className == "typecheck") {
+            if (data.length == 0) {
+                $('#txtScheduleTypes').val('ALL');
+                $('#txtOperationScheduleTypes').val('ALL');
+            }
+            else {
+                $('#txtScheduleTypes').val(data);
+                $('#txtOperationScheduleTypes').val(data);
+            }
+        }
+    }
+    function toggleUser(chk) {
+        if (chk.checked) {
+            var user = [];
+            $('.usercheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = 'checked';
+                user.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck'); //This is removed because otherwise all hospitals are submitted to the server and the query unnecessarily performs filtering
+            $('#hidUsers').val("");
+            $('#txtUsers').val('ALL');
+            $('#txtOperationUsers').val('ALL');
+        }
+        else {
+            $('.usercheck').each(function () {
+                this.checked = chk.checked;
+            });
+            checkboxHiddenUpdate($('#hidUsers'), 'usercheck');
+        }
+    }
+    function selectUser() {
+        checkboxHiddenUpdate($('#hidUsers'), 'usercheck');
+        $('#chkuserAll').prop('checked', false);
+    }
+    function toggleHosp(chk) {
+        if (chk.checked) {
+            var hosp = [];
+            $('#chkjustHosp').prop('checked', false);
+            $('#chkjustNH').prop('checked', false);
+            $('.hospcheck').each(function () {
+                this.checked = 'checked';
+                hosp.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck'); //This is removed because otherwise all hospitals are submitted to the server and the query unnecessarily performs filtering
+            $('#hidHospitals').val("");
+            $('#txtHospitals').val('ALL');
+            $('#txtOperationHospitals').val('ALL');
+        }
+        else {
+            $('.hospcheck').each(function () {
+                this.checked = chk.checked;
+            });
+            checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+        }
+    }
+    function selectHosp() {
+        checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+        $('#chkhospAll').prop('checked', false);
+        $('#chkjustHosp').prop('checked', false);
+        $('#chkjustNH').prop('checked', false);
+    }
+    function toggleType(chk) {
+        if (chk.checked) {
+            var serv = [];
+            $('.typecheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = 'checked';
+                serv.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+            $('#hidTypes').val("");
+            $('#txtScheduleTypes').val('ALL');
+            $('#txtOperationScheduleTypes').val('ALL');
+        }
+        else {
+            $('.typecheck').each(function () {
+                this.checked = chk.checked;
+            });
+            checkboxHiddenUpdate($('#hidTypes'), 'typecheck');
+        }
+    }
+    function selectType() {
+        checkboxHiddenUpdate($('#hidTypes'), 'typecheck');
+        $('#chktypeAll').prop('checked', false);
+    }
+    function triggerSubmit()
+    {
+        $('[name=submit]').click();
+    }
+    function showUsers()
+    {
+        closeFilters();
+        $("#UsersPopup").dialog({
+            position: { my: "top", at: "bottom", of: $('#txtUsers') }
+        });
+        $('#UsersPopup').dialog('open');
+    }
+    function showOperationUsers()
+    {
+        closeFilters();
+        $("#UsersPopup").dialog({
+            position: { my: "top", at: "bottom", of: $('#txtOperationUsers') }
+        });
+        $('#UsersPopup').dialog('open');
+    }
+    function showHospitals() {
+        closeFilters();
+        $("#HospitalsPopup").dialog({
+            position: { my: "top", at: "bottom", of: $('#txtHospitals') }
+        });
+        $('#HospitalsPopup').dialog('open');
+    }
+    function showOperationHospitals() {
+        closeFilters();
+        $("#HospitalsPopup").dialog({
+            position: { my: "top", at: "bottom", of: $('#txtOperationHospitals') }
+        });
+        $('#HospitalsPopup').dialog('open');
+    }
+    function showScheduleTypes() {
+        closeFilters();
+        $("#ScheduleTypesPopup").dialog({
+            position: { my: "top", at: "bottom", of: $('#txtScheduleTypes') }
+        });
+        $('#ScheduleTypesPopup').dialog('open');
+    }
+    function showOperationScheduleTypes() {
+        closeFilters();
+        $("#ScheduleTypesPopup").dialog({
+            position: { my: "top", at: "bottom", of: $('#txtOperationScheduleTypes') }
+        });
+        $('#ScheduleTypesPopup').dialog('open');
+    }
+    function closeFilters() {
+        if ($('#UsersPopup').dialog('isOpen')) {
+            $('#UsersPopup').dialog('close');
+        }
+        if ($('#HospitalsPopup').dialog('isOpen')) {
+            $('#HospitalsPopup').dialog('close');
+        }
+        if ($('#ScheduleTypesPopup').dialog('isOpen')) {
+            $('#ScheduleTypesPopup').dialog('close');
+        }
+    }
+    function showAddFavorite() {
+        $('#AddFavoritePopup').dialog('open');
+        $('#txtFavoriteNewName').focus();
+        $('#txtFavoriteNewName').select();
+    }
+    function closeAddFavorite() {
+        $('#AddFavoritePopup').dialog('close');
+    }
+    function showFavoriteManager() {
+        var userid = '@HubSecurity.getLoggedInUserID()';
+        var resultddl = $('#lstFavorites');
+        //populate
+        $.getJSON('/Schedule/jsonGetFavorites',
+            { user: userid }, function (result) {
+                resultddl.empty();
+                $(result).each(function () {
+                    $(document.createElement('option'))
+                        .attr('value', this.Value)
+                        .text(this.Text)
+                        .appendTo(resultddl);
+                    resultddl.Add
+                });
+            });
+        $.getJSON('/Schedule/jsonGetDefault',
+            { user: userid }, function (result) {
+                $('#CurrentFavorite').text('Current Default: ' + result);
+            });
+        $('#FavoriteManagerPopup').dialog('open');
+    }
+    function closeFavoriteManager() {
+        $('#FavoriteManagerPopup').dialog('close');
+    }
+    function toggleJustHosp(chk) {
+        if (chk.checked) {
+            $('#chkhospAll').prop('checked', false);
+            $('#chkjustNH').prop('checked', false);
+            var hospList = $('#hidHospitalList').val();
+            var hosp = [];
+            $('.hospcheck').each(function () {
+                if (hospList.indexOf($(this).val()) != -1)
+                {
+                    this.checked = 'checked';
+                    hosp.push(this.value);
+                }
+                else {
+                    this.checked = '';
+                }
+            });
+            $('#hidHospitals').val(hosp);
+            $('#txtHospitals').val('ALL Hosp');
+        }
+        else {
+            $('.hospcheck').each(function () {
+                this.checked = '';
+            });
+            $('#hidHospitals').val("");
+            $('#txtHospitals').val('');
+        }
+    }
+    function toggleJustNH(chk) {
+        if (chk.checked) {
+            $('#chkhospAll').prop('checked', false);
+            $('#chkjustHosp').prop('checked', false);
+            var hospList = $('#hidNHList').val();
+            var hosp = [];
+            $('.hospcheck').each(function () {
+                if (hospList.indexOf($(this).val()) != -1) {
+                    this.checked = 'checked';
+                    hosp.push(this.value);
+                }
+                else {
+                    this.checked = '';
+                }
+            });
+            $('#hidHospitals').val(hosp);
+            $('#txtHospitals').val('ALL Hosp');
+        }
+        else {
+            $('.hospcheck').each(function () {
+                    this.checked = '';
+            });
+            $('#hidHospitals').val("");
+            $('#txtHospitals').val('');
+        }
+    }
+    function showLegend()
+    {
+        window.open('@Url.Action("Legend","Schedule")', "_blank", "resizable=yes,scrollbars=yes,toolbar=yes,width=800,height=600");
+    }
+    function updateCriteria()
+    {
+        var ddl = $('#ChangeToDropdown');
+        ddl.empty();
+        switch ($('#MassEditCriteria').val())
+        {
+            case "Hospital":
+                {
+                    @foreach (SelectListItem hosp in Model.HospitalList)
+                    {
+                        <text>
+                        ddl.append('<option value="@hosp.Value">@hosp.Value</option>');
+                        </text>
+                    }
+                    break;
+                }
+            case "StartTime":
+                {
+                    @foreach (SelectListItem hour in Model.Hours)
+                    {
+                        <text>
+                        ddl.append('<option value="@hour.Value">@hour.Text</option>');
+                        </text>
+                    }
+                    break;
+                }
+            case "EndTime":
+                {
+                    @foreach (SelectListItem hour in Model.Hours)
+                    {
+                        <text>
+                        ddl.append('<option value="@hour.Value">@hour.Text</option>');
+                        </text>
+                    }
+                    break;
+                }
+            case "ScheduleType":
+                {
+                    @foreach (SelectListItem sch in Model.ScheduleList)
+                    {
+                        <text>
+                        ddl.append('<option value="@sch.Value">@sch.Value</option>');
+                        </text>
+                    }
+                    break;
+                }
+            case "UserID":
+                {
+                    @foreach (SelectListItem user in Model.UserList)
+                    {
+                        <text>
+                        ddl.append('<option value="@user.Value">@user.Text</option>');
+                        </text>
+                    }
+                    break;
+                }
+        }
+        updateOperationHidden();
+    }
+    function showMassEdit()
+    {
+        $('#MassEditRow').css('display', 'inherit');
+        $('#TallyRow').css('display', 'none');
+        $('#OperationLabel').text("Mass Schedule Edit");
+        $('#MassEditCriteria').val("Hospital");
+        var ddl = $('#ChangeToDropdown');
+        ddl.empty();
+        @foreach (SelectListItem hosp in Model.HospitalList)
+        {
+            <text>
+            ddl.append('<option value="@hosp.Value">@hosp.Value</option>');
+            </text>
+        }
+        $('#OperationSubmit').css('display', 'inherit');
+        //$('#OperationSubmit').val("MassEdit");
+        $('#OperationSubmit').text("Confirm Edit");
+
+        $('#OperationAction').val("MassEdit");
+        $('#OperationCriteria').val("Hospital");
+        $('#OperationChangeTo').val(ddl[0].value);
+
+        $('#OperationPopup').dialog('open');
+    }
+    function showFinalize()
+    {
+        $('#MassEditRow').css('display', 'none');
+        $('#TallyRow').css('display', 'none');
+        $('#OperationSubmit').css('display', 'inherit');
+        $('#OperationLabel').text("Finalize Schedule");
+        $('#OperationSubmit').val("Finalize");
+        $('#OperationSubmit').text("Post To Production");
+        $('#OperationAction').val("Finalize");
+        $('#OperationPopup').dialog('open');
+    }
+    function showDelete() {
+        $('#MassEditRow').css('display', 'none');
+        $('#TallyRow').css('display', 'none');
+        $('#OperationLabel').text("Delete Schedule");
+        $('#OperationSubmit').css('display', 'inherit');
+        $('#OperationSubmit').val("Delete");
+        $('#OperationSubmit').text("Delete");
+        $('#OperationAction').val("Delete");
+        $('#OperationPopup').dialog('open');
+    }
+    function showTally() {
+        $('#MassEditRow').css('display', 'none');
+        $('#OperationLabel').text("Tally Schedule");
+        $('#OperationSubmit').css('display', 'none');
+        $('#TallyRow').css('display', 'inherit');
+        $('#OperationPopup').dialog('open');
+    }
+    function updateOperationHidden()
+    {
+        var st = $('#txtOperationStartDate').val();
+        $('#OperationStartDate').val(st);
+        var et = $('#txtOperationEndDate').val();
+        $('#OperationEndDate').val(et);
+        $('#OperationCriteria').val($('#MassEditCriteria').val());
+        $('#OperationChangeTo').val($('#ChangeToDropdown').val())
+    }
+    function closeOperations()
+    {
+        $('#OperationAction').val(null);
+        $('#CommandRow').css('display', 'inherit');
+        $('#FilterRow').css('display', 'inherit');
+        $('#ResultRow').css('display', 'none');
+        if ($('#OperationPopup').dialog('isOpen'))
+        {
+            $('#OperationPopup').dialog('close');
+        }
+    }
+    function favoriteSelected() 
+    {
+        $('#FavoritePostback').val('yes');
+        triggerSubmit();
+    }
+    function addFavorite()
+    {
+        $('#FavoriteAddPostback').val('yes');
+        $('#FavoriteNewName').val($('#txtFavoriteNewName').val());
+        triggerSubmit();
+    }
+    //function updateNewName()
+    //{
+        //$('#FavoriteNewName').val($('#txtFavoriteNewName').val());
+        //if ($('#txtFavoriteNewName').val() == '')
+        //{
+        //    $('#AddFavorite').prop('disabled', true);
+            
+        //}
+        //else {
+        //    $('#AddFavorite').prop('disabled', false);
+        //}
+    //}
+    function updateDefault(chk)
+    {
+        if (chk.checked)
+        {
+            $('#FavoriteMakeDefault').val(true);
+        }
+        else {
+            $('#FavoriteMakeDefault').val(false);
+        }
+    }
+    function setDefault() 
+    {
+        var data = { id: $('#lstFavorites').val() };
+        $.ajax({
+            url: '/Schedule/jsonSetDefault',
+            type: "POST",
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify(data),
+            success: function (response) {
+                alert(response + ' was successfully set as default view!');
+                closeFavoriteManager();
+            },
+            error: function (response) {
+                alert(response.responseText);
+            }
+        });       
+    }
+    function deleteFavorite()
+    {
+        var data = { id: $('#lstFavorites').val() };
+        $.ajax({
+            url: '/Schedule/jsonDeleteFavorite',
+            type: "POST",
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify(data),
+            success: function (response) {
+                alert(response + ' was successfully deleted.');
+                closeFavoriteManager();
+            },
+            error: function (response) {
+                alert(response.responseText);
+            }
+        });
+    }
+</script>
+
+<div class="AIMSBanner">
+    <div>Schedule Work Area</div>
+</div>
+
+@using (Html.BeginForm("WorkArea", "Schedule", FormMethod.Post, new { id = "workForm" }))
+{
+    <input type="hidden" id="hidUsers" name="hidUsers" value="@Model.hidUsers" />
+    <input type="hidden" id="hidHospitals" name="hidHospitals" value="@Model.hidHospitals" />
+    <input type="hidden" id="hidTypes" name="hidTypes" value="@Model.hidTypes" />
+    <input type="hidden" id="hidHospitalList" name="hidHospitalList" value="@Model.hidHospitalList" />
+    <input type="hidden" id="hidNHList" name="hidNHList" value="@Model.hidNHList" />
+    <input type="hidden" id="FavoritePostback" name="FavoritePostback" value="@Model.FavoritePostback" />
+    <input type="hidden" id="FavoriteAddPostback" name="FavoriteAddPostback" value="@Model.FavoriteAddPostback" />
+    <div class="col-lg-12" style="padding: 5px;">
+        <div class="col-lg-5">
+            <input type="button" id="btnLegend" name="btnLegend" value="Legend" class="btn btn-default" style="float: left; box-shadow: 2px 2px 2px #888888;" onclick="javascript:showLegend()" />
+        </div>
+        <div class="col-lg-3">
+                <a type="button" class="btn btn-default btn-sm" href="@Url.Action("DisplayArea", "Schedule")"
+                   style="color: blue; font-size: small; font-weight: bold; margin-left:auto; margin-right: auto; text-align: center; padding-bottom: 3px; box-shadow: 2px 2px 2px #888888;"
+                   id="WorkArea">Back To Display Area</a>
+        </div>
+        <div class="col-lg-4">
+            <span style="float: right;">
+                <label>Show Rounding @Html.CheckBoxFor(model => model.ShowRounding)@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;") </label>
+                @Html.DropDownListFor(model => model.FavoriteSelected, Model.FavoriteList, "Select Favorite..", new { onchange = "javascript:favoriteSelected()" })            
+                <a href="#" id="AddFavorite" onclick="javascript:showAddFavorite()"><i class="glyphicon glyphicon-star" style="color: yellow; font-size: 20px;" title="Add current filters to favorites"></i></a>
+                <a href="#" id="EditFavorite" onclick="javascript:showFavoriteManager()"><i class="glyphicon glyphicon-tasks" style="font-size: 20px;" title="Manage Favorites"></i></a>
+            </span>
+        </div>
+    </div>
+    <div class="col-lg-12" style="padding: 5px;border : 1px solid lightblue; background-color: lightblue;">
+        <div class="col-lg-2">
+            <button type="button" value="Mass Edit" onclick="javascript:showMassEdit()" class="btn btn-default btn-sm" style="color: mediumpurple; font-weight: bolder; box-shadow: 2px 2px 2px #888888;" >Mass Edit</button>
+        </div>
+        <div class="col-lg-2">
+            <button type="button" value="Import Schedule" onclick="javascript:showImport()" class="btn btn-default btn-sm" style="color: deepskyblue; font-weight: bolder; box-shadow: 2px 2px 2px #888888;">Import Schedule</button>
+        </div>
+        <div class="col-lg-2">
+            <button type="button" value="Tally Schedule" onclick="javascript:showTally()" class="btn btn-default btn-sm" style="color: gold; font-weight: bolder; box-shadow: 2px 2px 2px #888888;">Tally Schedule</button>
+        </div>
+        <div class="col-lg-2">
+            <button type="button" value="Finalize Schedule" onclick="javascript:showFinalize()" class="btn btn-default btn-sm" style="color: black; font-weight: bolder; box-shadow: 2px 2px 2px #888888;">Finalize Schedule</button>
+        </div>
+        <div class="col-lg-2">
+            <button type="button" value="Export Schedule" onclick="javascript:showExport()" class="btn btn-default btn-sm" style="color: crimson; font-weight: bolder; box-shadow: 2px 2px 2px #888888;">Export Schedule</button>
+        </div>
+        <div class="col-lg-2">
+            <button type="button" value="Delete Schedule" onclick="javascript:showDelete()" class="btn btn-default btn-sm" style="color: red; font-weight: bolder; box-shadow: 2px 2px 2px #888888;">Delete Schedule</button>
+        </div>
+    </div>
+    <div class="col-lg-12" style="background-color: lightblue; padding-top: 5px;">
+        <div class="col-lg-2">
+            <button id="PreviousButton" name="PreviousButton" class="btn glyphicon glyphicon-chevron-left" style="font-size: 8px; box-shadow: 2px 2px 2px #888888;" title="Previous month" value="clicked"></button>
+            <button id="NextButton" name="NextButton" class="btn glyphicon glyphicon-chevron-right" style="font-size: 8px; box-shadow: 2px 2px 2px #888888;" title="Next month" value="clicked"></button>@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")
+            @Model.DateString
+        </div>
+        <div class="col-lg-10">
+            <span style="white-space: nowrap; overflow: hidden;">
+                <strong>Selected Date: </strong><input type="text" style="box-shadow: 2px 2px 2px #888888;" name="SelectedDate" id="SelectedDate" class="date-picker textdate" value="@Model.SelectedDate.ToShortDateString()" onchange="javascript:triggerSubmit();" />
+            </span>
+            @Html.Raw("&nbsp;")
+            <span style="white-space: nowrap; overflow: hidden;">
+                <strong>Users: </strong><input type="text" name="txtpopup" style="box-shadow: 2px 2px 2px #888888;" id="txtUsers" class="textdate" value="" onclick="javascript:showUsers();" />
+            </span>
+            @Html.Raw("&nbsp;")
+            <span style="white-space: nowrap; overflow: hidden;">
+                <strong>Hospitals: </strong><input type="text" style="box-shadow: 2px 2px 2px #888888;" name="txtpopup" id="txtHospitals" class="textdate" value="" onclick="javascript:showHospitals();" />
+            </span>
+            @Html.Raw("&nbsp;")
+            <span style="white-space: nowrap; overflow: hidden;">
+                <strong>Type: </strong><input type="text" style="box-shadow: 2px 2px 2px #888888;" name="txtpopup" id="txtScheduleTypes" class="textdate" value="" onclick="javascript:showScheduleTypes();" />
+            </span>
+            @Html.Raw("&nbsp;")
+            <button type="submit" name="submit" class="btn btn-primary btn-sm" value="Go" style="box-shadow: 2px 2px 2px #888888;">
+                Go <i class="glyphicon glyphicon-arrow-right"></i>
+            </button>
+            @Html.Raw("&nbsp;")
+
+            @*<span style="white-space: nowrap; overflow: hidden;">
+                    <strong>View: </strong>@Html.DropDownListFor(model => model.SelectedView, Model.ViewList, null, new { @onchange = "javascript:changeView()", name = "drpView" })
+                </span>*@
+        </div>
+    </div>
+        <div id="CreatePopup" style="max-width: 600px;"></div>
+        <div class="col-lg-12" style="margin-top: 5px;">
+            @Html.DayPilotMonth("dpm", new DayPilotMonthConfig
+       {
+           BackendUrl = Url.Content("~/Schedule/MonthWork"),
+           CssOnly = true,
+           EventHeight = 25,
+           EventClickHandling = DayPilot.Web.Mvc.Events.Month.EventClickHandlingType.JavaScript,
+           EventClickJavaScript = "edit(e.id())",
+           EventCorners = DayPilot.Web.Mvc.Enums.Month.CornerShape.Rounded,
+           ViewType = DayPilot.Web.Mvc.Enums.Month.ViewTypeEnum.Month,
+           ContextMenu = "menu",
+           EventDeleteJavaScript = "javascript:deleteRecord(e.id())",
+           EventDeleteHandling = DayPilot.Web.Mvc.Events.Month.EventDeleteHandlingType.JavaScript,
+           EventTextAlignment = DayPilot.Web.Mvc.Enums.Month.TextAlignment.Center,
+           AfterRenderJavaScript = "javascript:setupDayPilot()",
+           EventTimeFontSize = "20",         
+           HeaderHeight = 25,
+           CellHeaderHeight = 22,
+           CellHeight = 120,
+           Width = "100%",
+           Theme = "classic"
+       })
+            @*@Html.DayPilotMenu("menu", new DayPilotMenuConfig
+       {
+           Items = new MenuItemCollection
+           {
+               new MenuItem { Action = DayPilot.Web.Mvc.Enums.MenuItemAction.JavaScript, Text = "Test", ToolTip = "Test Tooltip", JavaScript = "alert('test')" }
+           }
+           
+       })*@
+        </div>
+
+        <div id="UsersPopup" name="NonModalPopup" style="display: none">
+            <span class="col-lg-12" style="overflow-y: auto; max-height: 500px; min-width: 150px;">
+                <label><input type="checkbox" value="ALL" id="chkuserAll" onclick="javascript:toggleUser(this)" />ALL</label><br />
+                @{foreach (SelectListItem user in Model.UserList)
+                {
+                        <label style="font-weight: 100"><input type="checkbox" class="usercheck" onclick="javascript:selectUser()" value="@user.Value" />@user.Text </label><br />
+                    }
+                }
+            </span>
+        </div>
+        <div id="HospitalsPopup" name="NonModalPopup" style="display: none;">
+            <div class="col-lg-12" style=" overflow-y: auto; max-height: 500px; min-width: 150px;">
+                <label><input type="checkbox" value="ALL" id="chkhospAll" onclick="javascript:toggleHosp(this)" />ALL</label><br />
+                <label><input type="checkbox" value="ALL Hosp" id="chkjustHosp" onclick="javascript:toggleJustHosp(this)" />ALL Hosp</label><br />
+                <label><input type="checkbox" value="ALL NH" id="chkjustNH" onclick="javascript:toggleJustNH(this)" />ALL NH</label><br />
+                @{foreach (SelectListItem hosp in Model.HospitalList)
+                {
+                        <label style="font-weight: 100">
+                            <input type="checkbox" class="hospcheck" onclick="javascript:selectHosp()" value="@hosp.Value" />@hosp.Text
+                        </label><br />
+                    }
+                }
+            </div>
+        </div>
+        <div id="ScheduleTypesPopup" name="NonModalPopup" style="display: none">
+            <span class="col-lg-12" style="overflow-y: auto; max-height: 500px; min-width: 300px;">
+                <label><input type="checkbox" value="ALL" id="chktypeAll" onclick="javascript:toggleType(this)" />ALL</label><br />
+                @if (Model.ShowRounding)
+                {
+                    foreach (SelectListItem type in Model.ScheduleRoundingList)
+                    {
+                        <label style="font-weight: 100">
+                            <input type="checkbox" class="typecheck" onclick="javascript:selectType()" value="@type.Value" />@type.Text
+                        </label><br />
+                    }
+                }
+                else
+                {
+                    foreach (SelectListItem type in Model.ScheduleList)
+                    {
+                        <label style="font-weight: 100">
+                            <input type="checkbox" class="typecheck" onclick="javascript:selectType()" value="@type.Value" />@type.Text
+                        </label><br />
+                    }
+                }
+            </span>
+        </div>
+        @Html.HiddenFor(model => model.FavoriteNewName)
+        @Html.HiddenFor(model => model.FavoriteMakeDefault)
+        <div id="AddFavoritePopup" style="display: none;">
+            <div>
+                <span style="margin-left: auto; margin-right: auto; text-align: center; border-bottom: 1px solid black">
+                    <label>Set a favorite name. It can be anything you like.</label>
+                </span>
+            </div>
+            <div>
+                <span style="margin-left: auto; margin-right: auto; text-align: center; margin-top: 20px">
+                    <label>Name: </label>
+                </span>
+                <span style="margin-left: auto; margin-right: auto; text-align: center; margin-top: 20px">
+                    <input type="text" id="txtFavoriteNewName" name="txtFavoriteNewName" value="Enter Name" />
+                </span>
+            </div>
+            <div class="col-lg-12">
+                <div style="margin-left: auto; margin-right: auto; text-align: center; margin-top: 10px">
+                    <label style="margin-top: 10px" title="Check this box to make this view default when you visit schedule"><input type="checkbox" id="FavoriteMakeDefault" name="FavoriteMakeDefault" onchange="javascript:updateDefault(this)" value="@Model.FavoriteMakeDefault" />Set as Default</label>
+            </div>
+            </div>
+                <div class="btn-group" style="margin-left: auto; margin-right: auto; text-align: center; margin-top: 20px;">
+                    <button type="button" id="AddFavorite" name="AddFavorite" onclick="javascript:addFavorite()">Add Favorite</button>
+                    <button type="button" onclick="javascript:closeAddFavorite()">Cancel</button>
+                </div>
+        </div>
+        <div id="FavoriteManagerPopup" style="display: none">
+            <span style="margin-left: auto; margin-right: auto; text-align: center; border-bottom: 1px solid black">
+                <label>Manage Favorites</label>
+            </span>
+            <div style="margin-left: auto; margin-right: auto; text-align: center; margin-top: 10px;">
+                <div id="CurrentFavorite"></div>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>
+                            Favorites
+                        </th>
+                        <th>
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <select id="lstFavorites" name="lstFavorites" size="4" style="height:200px;width:180px;overflow: scroll; margin-left: 10px;"></select>
+                        </td>
+                        <td valign="middle">
+                            <div><button type="button" id="btnSetDefault" value="Set as Default" style="width: 150px;" onclick="javascript:setDefault()">Set as Default</button></div>
+                            <div style="margin-top: 15px;"><button type="button" id="btnDeleteFavorite" value="Delete Favorite" style="width: 150px;" onclick="javascript:deleteFavorite()">Delete</button></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="margin-left: auto; margin-right: auto; text-align: center; margin-top: 10px;">
+                <button type="button" onclick="javascript:closeFavoriteManager()">Close</button>
+            </div>
+        </div>
+
+        @Html.HiddenFor(model => model.OperationStartDate)
+        @Html.HiddenFor(model => model.OperationEndDate)
+        @Html.HiddenFor(model => model.OperationAction)
+        @Html.HiddenFor(model => model.OperationCriteria)
+        @Html.HiddenFor(model => model.OperationChangeTo)
+        <div id="OperationPopup" style="display: none">
+            <div id="OperationHeader" class="col-lg-12" style="margin-left: auto; margin-right: auto; text-align: center;">
+                <h2 style="color: darkblue;"><label id="OperationLabel"></label></h2>
+            </div>
+            <div id="MassEditRow" style="display: none;">
+                <div class="col-lg-12">
+                    <div class="col-lg-4 col-lg-offset-3">
+                        <span style="white-space: nowrap; overflow: hidden;">
+                            <label>Mass Edit Criteria: </label> @Html.DropDownListFor(model => model.MassEditCriteria, Model.MassEditCriteria, null, new { onchange = "javascript:updateCriteria()" })
+                            <label style="margin-left: 30px;">Change To: </label> <select id="ChangeToDropdown" onchange="javascript:updateOperationHidden()"></select>
+                        </span>
+                    </div>
+                </div>
+                <div class="col-lg-12" style="margin-left: auto; margin-right: auto; text-align: center; margin-top: 15px;">
+                    <i class="glyphicon glyphicon-chevron-down"></i><label>Change all values found in criteria below</label><i class="glyphicon glyphicon-chevron-down"></i>
+                </div>
+            </div>
+            <div class="col-lg-12" id="FilterRow" style="margin-top: 20px; margin-left: auto; margin-right: auto; text-align:center;">
+                <span style="white-space: nowrap; overflow: hidden">
+                    <label>User: </label><input type="text" name="txtpopup" style="box-shadow: 2px 2px 2px #888888;" id="txtOperationUsers" class="textdate" value="" onclick="javascript:showOperationUsers();" />
+                    <label>Hospital: </label><input type="text" name="txtpopup" style="box-shadow: 2px 2px 2px #888888;" id="txtOperationHospitals" class="textdate" value="" onclick="javascript:showOperationHospitals();" />
+                    <label>Type: </label><input type="text" name="txtpopup" style="box-shadow: 2px 2px 2px #888888;" id="txtOperationScheduleTypes" class="textdate" value="" onclick="javascript:showOperationScheduleTypes();" />
+                    <label>Start Date: </label><input type="text" name="txtOperationStartDate" id="txtOperationStartDate" readonly="readonly" class="date-picker textdate" value="@Model.OperationStartDate.ToShortDateString()" onchange="javascript:updateOperationHidden()" />
+                    <label>End Date: </label><input type="text" name="txtOperationEndDate" id="txtOperationEndDate" readonly="readonly" class="date-picker textdate" value="@Model.OperationEndDate.ToShortDateString()" onchange="javascript:updateOperationHidden()" />
+                </span>
+            </div>
+            <div class="col-lg-12" id="TallyRow" style="margin-top: 20px; margin-left: auto; margin-right: auto; text-align:center; display: none;">
+                <span>
+                    <button type="button" name="TallyButton" value="DaySchedule" class="btn btn-default btn-sm" style="box-shadow: 2px 2px 2px #888888;">Day Schedule</button>
+                    <button type="button" name="TallyButton" value="NightSchedule" class="btn btn-default btn-sm" style="box-shadow: 2px 2px 2px #888888;">Night Schedule</button>
+                    <button type="button" name="TallyButton" value="WeekendSchedule" class="btn btn-default btn-sm" style="box-shadow: 2px 2px 2px #888888;">Weekend Schedule</button>
+                    <button type="button" name="TallyButton" value="TimeOffSchedule" class="btn btn-default btn-sm" style="box-shadow: 2px 2px 2px #888888;">TimeOff Schedule</button>
+                    <button type="button" name="TallyButton" value="MoonlightingSchedule" class="btn btn-default btn-sm" style="box-shadow: 2px 2px 2px #888888;">Moonlighting Schedule</button>
+                    <button type="button" name="TallyButton" value="CallSchedule" class="btn btn-default btn-sm" style="box-shadow: 2px 2px 2px #888888;">Call Schedule</button>
+                </span>
+            </div>
+            <div id="CommandRow" class="col-lg-12" style="margin-left: auto; margin-right: auto; text-align: center; margin-top: 15px;">
+                <div class="btn-group" style="margin-left: auto; margin-right: auto; text-align: center;">
+                    <button type="submit" id="OperationSubmit" name="OperationSubmit" onclick="javascript:triggerSubmit()"></button>
+                    <button type="button" onclick="javascript:closeOperations()">Cancel</button>
+                </div>
+            </div>
+            <div id="ResultRow" class="col-lg-12" style="margin-left: auto; margin-right: auto; text-align: center; margin-top: 15px; display: none;">
+                <div><h3>Operation Completed</h3></div>
+                <div><h3>@Model.OperationResult.ToString() records affected.</h3></div>
+                <div><button type="button" onclick="javascript:closeOperations()">Dismiss</button></div>
+            </div>
+        </div>
+}
+
+

@@ -1,0 +1,160 @@
+
+/* 
+
+DayPilot Month Theme 
+https://themes.daypilot.org/month/theme/hjibcc
+
+Theme Designer Version: 2017.05.15.1032
+*/
+
+.classic_main 
+{
+	border: 1px solid #c0c0c0;
+}
+
+.classic_main, .classic_main td 
+{
+	font-family: Tahoma, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+}
+
+.classic_event { 
+	border: 1px solid black;
+}
+
+.classic_event_inner { 
+	position: absolute;
+	overflow: hidden;
+	
+	left: 0px;
+	right: 0px;
+	top: 0px;
+	bottom: 0px;
+	
+	margin-left: auto;
+    margin-right: auto;
+	text-align: center;
+
+	color: #333333;
+	background-color: #ffffff;
+	
+	background: -webkit-gradient(linear, left top, left bottom, from(#ffffff), to(#fafafa));  
+	background: -webkit-linear-gradient(top, #ffffff 0%, #fafafa);
+	background: -moz-linear-gradient(top, #ffffff 0%, #fafafa);
+	background: -ms-linear-gradient(top, #ffffff 0%, #fafafa);
+	background: -o-linear-gradient(top, #ffffff 0%, #fafafa);
+	background: linear-gradient(top, #ffffff 0%, #fafafa);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorStr="#ffffff", endColorStr="#fafafa");
+	
+	
+	
+	padding: 2px;
+	
+	
+	border: 1px solid #cccccc;
+	
+	
+	
+	
+	
+}
+
+.classic_header_inner
+{
+	position: absolute;
+	left: 0px;
+	right: 0px;
+	top: 0px;
+	bottom: 0px;
+	border-right: 1px solid #c0c0c0;
+	border-bottom: 1px solid #c0c0c0;
+	text-align: center;
+	padding: 2px;
+    margin-left: auto;
+    margin-right: auto;
+    font-weight: bolder;
+	color: #0c30a8;
+	background-color: lightgray;
+}
+
+.classic_cell 
+{
+	background-color: #fff4bc;
+}
+.classic_cell.currentDay {
+    background-color: rgb(204, 255, 153);
+}
+
+.classic_cell.classic_cell_business
+{
+	background-color: #ffffd5;
+}
+.classic_cell.classic_cell_business.currentDay
+{
+    background-color: rgb(204, 255, 153);
+}
+
+.classic_cell_inner 
+{
+	border-right: 1px solid #cccccc;
+	border-bottom: 1px solid #cccccc;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	bottom: 0px;
+	right: 0px;	
+}
+
+.classic_cell_header 
+{
+	text-align: right;
+	padding-right: 2px;
+    background-color: white;
+    font-weight: bolder;
+    color: red;
+}
+
+.classic_cell_header.currentDay {
+    text-align: right;
+    padding-right: 2px;
+    background-color: rgb(204, 255, 153);
+    font-weight: bolder;
+    color: red;
+}
+
+.classic_message 
+{
+	padding: 10px;
+	opacity: 0.9;
+	filter: alpha(opacity=90);
+	
+	color: #ffffff;
+	background: #ffa216;
+	
+}
+
+.classic_shadow_inner 
+{
+	background-color: #666666;
+	opacity: 0.5;
+	filter: alpha(opacity=50);
+	height: 100%;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+}
+
+.classic_event_delete {
+	background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAadEVYdFNvZnR3YXJlAFBhaW50Lk5FVCB2My41LjExR/NCNwAAAI5JREFUKFNtkLERgCAMRbmzdK8s4gAUlhYOYEHJEJYOYOEwDmGBPxC4kOPfvePy84MGR0RJ2N1A8H3N6DATwSQ57m2ql8NBG+AEM7D+UW+wjdfUPgerYNgB5gOLRHqhcasg84C2QxPMtrUhSqQIhg7ypy9VM2EUZPI/4rQ7rGxqo9sadTegw+UdjeDLAKUfhbaQUVPIfJYAAAAASUVORK5CYII=) center center no-repeat; 
+	opacity: 0.6; 
+	-ms-filter:'progid:DXImageTransform.Microsoft.Alpha(Opacity=60)';
+	cursor: pointer;
+}
+
+.classic_event_delete:hover {
+	opacity: 1;
+	-ms-filter: none;
+}
+
+.classic_event_timeleft { color: #ccc; font-size: 8pt }
+.classic_event_timeright { color: #ccc; font-size: 8pt; text-align: right; }

@@ -1,0 +1,117 @@
+﻿@model AimsHub.ViewModels.PCPCommunicationIndexViewModel
+@using GridMvc.Html
+@using AimsHub.Models
+@using AimsHub.ViewModels
+@using AimsHub.Security
+
+@{
+    ViewBag.Title = "PCP Communication";
+    string displayName = HubSecurity.getLoggedInDisplayName();
+}
+
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<script src="~/Scripts/gridmvc.js"></script>
+<link href="~/Content/Gridmvc.css" rel="stylesheet" />
+<style type="text/css">
+    input[type='checkbox'] {
+        width: 18px;
+        height: 18px;
+        background: white;
+        border-radius: 5px;
+        border: 2px solid #555;
+    }
+
+    tr.grid-empty-text {
+        font-weight: bolder;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+        font-size: xx-large;
+    }
+
+    td {
+        max-height: 200px;
+        overflow: hidden;
+    }
+</style>
+<script type='text/javascript'>
+    $(document).ready(function () {
+        updateIDs();
+        var selectAllCell = $("th:first");
+        selectAllCell.empty();
+
+        $('<input />', { type: 'checkbox', id: 'chkSelectAll', onchange: 'javascript:toggleAll();', checked: 'checked' }).appendTo(selectAllCell);
+    });                  
+
+    function toggleAll() {
+        alert('Hooray');
+    }
+    function triggerSubmit() {
+        $('[name=updateQuery]').click();
+    }
+    function chkSelected() {
+        updateIDs();
+    }
+    function updateIDs() {
+        var ids = [];
+        var i = 0;
+        $('table tr').each(function () {
+            if (i == 0) {
+
+            }
+            else {
+                var id = $(this).find('#ID').val();
+                ids.push(id);
+            }
+            i++;
+        });
+        $('#hidIDs').val(ids);
+    }
+</script>
+<div class="AIMSBanner">
+    @displayName's Outstanding Communications
+</div>
+
+
+    @using (Html.BeginForm("Index", "PCPCommunication", FormMethod.Post, new { name = "indexForm" }))
+    {
+        <span>
+            <input type="hidden" id="hidIDs" name="hidIDs" />
+            <strong>From: </strong><input type="text" name="FromDate" id="FromDate" class="date-picker textdate" value="@Model.FromDate" onchange="javascript:triggerSubmit();"  />
+            @Html.Raw("&nbsp;")
+            <strong>To: </strong><input type="text" name="ToDate" id="ToDate" class="date-picker textdate" value="@Model.ToDate" onchange="javascript:triggerSubmit();"  />
+            @Html.Raw("&nbsp;")
+            <button type="submit" name="updateQuery" class="btn btn-primary btn-sm" style="display: none;">
+                Go <i class="glyphicon glyphicon-arrow-right"></i>
+            </button>
+            @Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")
+            <button type="submit" name="sendComms" class="btn btn-success btn-sm" style="margin-right: 100px; float: right;">
+                <span>Send Selected Communications</span>
+                <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+            </button>
+
+        </span>
+    }
+<div style="width:100%;">
+    @Html.Grid(Model.Patients).Columns(columns =>
+{
+    columns.Add()
+     .Encoded(false)
+     .Sanitized(false)
+     .SetWidth(30)
+     .RenderValueAs(c => Html.CheckBox("chkSelect", true, new { name = "chkSelect", onclick = "javascript:chkSelected(this)" }));
+    columns.Add(c => c.ID, true).Titled("ID").Encoded(false).Sanitized(false).RenderValueAs(c => Html.Hidden("ID", c.ID));
+    columns.Add(c => c.ServiceDate).Titled("ServiceDate").Sortable(true).RenderValueAs(c => Convert.ToDateTime(c.ServiceDate).ToShortDateString());
+    columns.Add(c => c.Hospital).Titled("Hospital").Sortable(true);
+    columns.Add(c => c.PCP_Practice).Titled("PCP").Filterable(true).Sortable(true);
+    columns.Add(c => c.PatientName).Titled("Name").Filterable(true).Sortable(true);
+    columns.Add(c => c.MRN_FIN).Titled("MRN").Sortable(true);
+    columns.Add(c => c.RoomNo).Titled("Room").Sortable(true);
+    columns.Add(c => c.DOB).Titled("DOB").Sortable(true).RenderValueAs(c => Convert.ToDateTime(c.ServiceDate).ToShortDateString());
+    columns.Add(c => c.Gender).Titled("Gender").Sortable(true);
+    columns.Add(c => c.ServiceType).Titled("ServiceType").Sortable(true);
+    columns.Add(c => c.Notes).Titled("Notes").Sortable(false);
+}).Selectable(false).EmptyText("Nothing to send! Hooray!")
+</div>
+  

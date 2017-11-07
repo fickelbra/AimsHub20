@@ -1,0 +1,234 @@
+﻿@model AimsHub.Models.PCPCommunication
+
+@{
+    ViewBag.Title = "Details";
+}
+
+<h2>Details</h2>
+
+<div>
+    <h4>PCPCommunication</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.CommStatus)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.CommStatus)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.UserID)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.UserID)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.CommType)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.CommType)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.DocumentType)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.DocumentType)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.DocumentName)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.DocumentName)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.DocumentPath)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.DocumentPath)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.FaxNo)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.FaxNo)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.EmailID)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.EmailID)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.ToName)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.ToName)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.ToUserID)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.ToUserID)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.FaxCover)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.FaxCover)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.JobID)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.JobID)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.ScheduledTime)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.ScheduledTime)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.SubmissionTime)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.SubmissionTime)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.StartTime)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.StartTime)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.EndTime)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.EndTime)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Duration)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Duration)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Pages)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Pages)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Retries)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Retries)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.CompletedStatus)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.CompletedStatus)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Hospital)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Hospital)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.PatientName)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.PatientName)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Comments)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Comments)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.PLRecord)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.PLRecord)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.GenComHeading)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.GenComHeading)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.AdditionalComments)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.AdditionalComments)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.DOB)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.DOB)
+        </dd>
+
+    </dl>
+</div>
+<p>
+    @Html.ActionLink("Edit", "Edit", new { id = Model.ID }) |
+    @Html.ActionLink("Back to List", "Index")
+</p>

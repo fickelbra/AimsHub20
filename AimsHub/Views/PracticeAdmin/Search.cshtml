@@ -1,0 +1,132 @@
+﻿@model PracticeAdminSearchViewModel
+@using AimsHub.ViewModels
+
+@{
+    ViewBag.Title = "Search";
+    Layout = "~/Views/Shared/_LayoutPCP.cshtml";
+}
+
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<script type='text/javascript'>
+    $(document).ready(function () {
+        //Make checkbox list "retain" values
+        $("#DocumentsPopup").dialog({
+            autoOpen: false,
+            show: 'clip',
+            resizable: true,
+            draggable: true,
+            title: "Patient Documents",
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            position: { my: "top", at: "top", of: $(window) }
+        });
+    });
+    function showDocuments(btn)
+    {
+        var row = $(btn).parent();
+        var id = $(row).find('#Model.Patients.ID').val();
+
+        $.getJSON('/PracticeAdmin/jsonDocuments',
+            { site: id }, function (result) {
+                $(result).each(function () {
+                    
+                });
+            });
+        
+        $('#DocumentsPopup').dialog('open');
+    }
+</script>
+
+<div class="AIMSBanner">
+    Patient Archive Search
+</div>
+
+@using (Html.BeginForm("Search", "PracticeAdmin", FormMethod.Post, new { id = "searchForm" }))
+{
+    <span class="col-md-12">
+        <span class="col-md-4">
+            <strong>From: </strong><input type="text" name="FromDate" id="txtFrom" class="date-picker textdate" value="@Model.FromDate" onchange="javascript:triggerSubmit();" />
+            @Html.Raw("&nbsp;")
+            <strong>To: </strong><input type="text" name="ToDate" id="txtTo" class="date-picker textdate" value="@Model.ToDate" onchange="javascript:triggerSubmit();" />
+            @Html.Raw("&nbsp;")
+        </span>
+        <span class="col-md-4">
+            <strong>Patient Name:</strong><input type="text" name="PatientSearch" id="txtPatientSearch" class="textdate" value="@Model.PatientSearch" />
+        </span>
+        <span class="col-md-4">
+            <button type="submit" name="submit" class="btn btn-primary btn-sm" value="Search" style="display: none;">
+                Search <i class="glyphicon glyphicon-arrow-right"></i>
+            </button>
+        </span>
+    </span>
+
+    <div id="DocumentsPopup" style="display: none">
+        <table id="DocumentsTable">
+            <tr id="headerRow">
+                <td>
+                    Service Date
+                </td>
+                <td>
+                    Document Type
+                </td>
+                <td> 
+                    Document
+                </td>
+            </tr>
+            <tr id="contentStartRow"></tr>
+        </table>
+    </div>
+
+    <table id="patientGrid" class="table table-bordered table-striped">
+        <tr>
+            <th style="display: none;">ID</th>
+            <th><a href="#" class="SortLink" data-name="ServiceDate" name="SortLink" id="SortServiceDate">ServiceDate</a><i name="sortArrow"></i></th>
+            <th style="display: none;">Physician</th>
+            <th><a href="#" class="SortLink" data-name="Hospital" name="SortLink" id="SortHospital">Hospital</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="PCP_Practice" name="SortLink" id="SortPCP_Practice">PCP_Practice</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="Physician" name="SortLink" id="SortPhysician">Physician</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="PatientName" name="SortLink" id="SortPatientName">PatientName</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="MRN_FIN" name="SortLink" id="SortMRN_FIN">MRN_FIN</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="ServiceType" name="SortLink" id="SortServiceType">ServiceType</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="Comments" name="SortLink" id="SortComments">Comments</a><i name="sortArrow"></i></th>
+        </tr>
+        @foreach (var p in Model.Patients)
+        {
+            <tr>
+                <td style="display: none;" data-name="ID">@Html.DisplayFor(model => p.ID)</td>
+                <td data-name="ServiceDate">@Html.DisplayFor(model => p.ServiceDate)</td>
+                <td data-name="Hospital">@Html.DisplayFor(model => p.Hospital)</td>
+                <td data-name="PCP_Practice">@Html.DisplayFor(model => p.PCP_Practice)</td>
+                <td data-name="Physician">@Html.DisplayFor(model => p.Physician)</td>
+                <td data-name="PatientName">@Html.DisplayFor(model => p.PatientName)</td>
+                <td data-name="MRN_FIN">@Html.DisplayFor(model => p.MRN_FIN)</td>
+                <td data-name="ServiceType">@Html.DisplayFor(model => p.ServiceType)</td>
+                <td data-name="Comments">@Html.DisplayFor(model => p.Comments)</td>
+            </tr>
+        }
+    </table>
+
+    @*<div style="width:100%;">
+        @Html.Grid(Model.Patients).Columns(columns =>
+        {
+            columns.Add()
+            .Encoded(false)
+            .Sanitized(false)
+            .SetWidth(110)
+            .Titled("Actions")
+            .RenderValueAs(c => @Html.Partial("_TableButtonsPartial", new SmallButtonModel { Id = c.ID }));
+            columns.Add(c => c.ID, true).Titled("ID");
+            columns.Add(c => c.ServiceDate).Titled("ServiceDate").Sortable(true).RenderValueAs(c => Convert.ToDateTime(c.ServiceDate).ToShortDateString());
+            columns.Add(c => c.Hospital).Titled("Hospital").Sortable(true);
+            columns.Add(c => c.PCP_Practice).Titled("PCP").Filterable(true).Sortable(true);
+            columns.Add(c => c.Physician, true).Titled("Physician").Sortable(true);
+            columns.Add(c => c.PatientName).Titled("Name").Filterable(true).Sortable(true).Encoded(false).Sanitized(false).RenderValueAs(c => @Html.ActionLink(c.PatientName.ToString(), "PatientSort", "PatientLog", new { patientName = c.PatientName }, null));
+            columns.Add(c => c.MRN_FIN).Titled("MRN").Sortable(true);
+            columns.Add(c => c.ServiceType).Titled("ServiceType").Sortable(true).Filterable(true);
+            columns.Add(c => c.Comments).Titled("Comments").Sortable(true);
+            columns.Add(c => c.Notes).Titled("Documents").Sortable(false).Encoded(false).Sanitized(false).RenderValueAs(c => Html.Partial("_ButtonWithHiddenPartial", new ButtonWithHidden { cls = "btn btn-info", valu = "Documents", jqueryFunction = "showDocuments(this)", plogCol = "Documents", }));
+        }).Selectable(false).Named("patientGrid")
+    </div>*@
+}

@@ -1,0 +1,499 @@
+﻿@model PatientLogIndexViewModel
+@using AimsHub.ViewModels
+@using AimsHub.Models;
+@using AimsHub.Security
+
+@{
+    ViewBag.Title = "PatientLog";
+    string displayName = "";
+    //int totalPhy = Model.PhysicianList.Count();
+    int totalHosp = Model.HospitalList.Count();
+    int totalServ = Model.ServiceList.Count();
+    bool isAdmin = (HubSecurity.isAdmin || HubSecurity.isSiteLeader);
+    string javaIsAdmin = isAdmin ? "true" : "false";
+    displayName = HubSecurity.getLoggedInDisplayName();
+}
+
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<script type='text/javascript'>
+    $(document).ready(function () {
+        $('body').bind('click', function (e) {
+            if (!$(e.target).is('.ui-dialog, li') && !$(e.target).closest('.ui-dialog').length && !$(e.target).is('[name=txtpopup]')) {
+                $('[name=NonModalPopup]').each(function () {
+                    if ($(this).dialog('isOpen')) {
+                        $(this).dialog('close');
+                    }
+                });
+            }
+        }
+        );
+        
+        //Set sort graphic
+        var col = $('#SortColumn').val();
+        var dir = $('#SortDirection').val();
+        var lnk = $('#Sort' + col);
+        var header = lnk.parent();
+        if (dir.indexOf('A') != -1)
+        {      
+            $(header).find('[name=sortArrow]').addClass('glyphicon glyphicon-triangle-bottom');
+        }
+        else {
+            $(header).find('[name=sortArrow]').addClass('glyphicon glyphicon-triangle-top');
+        }
+
+        //Highlight rows based on patient risk factor
+        $('[name=HiddenRiskValues]').each(function () {
+            var id = $(this).attr('id');
+            var risk = $(this).val();
+
+            var row = $('tr').find('td:contains(' + id + ')').parent();
+            var cell = row.find('[data-name=PatientName]');
+            if (risk == "H")
+            {
+                cell.css("background-color", "tomato");
+                cell.prop("title", "This patient was discharged within the past 7 days");
+            }
+            else if (risk == "M")
+            {
+                cell.css("background-color", "yellow");
+                cell.prop("title", "This patient was discharged within the past 30 days");
+            }
+        });
+
+        $("#NotesPopupOuter").dialog({
+            autoOpen: false,
+            show: 'clip',
+            resizable: true,
+            draggable: true,
+            title: "Notes/Comments",
+            height: 'auto',
+            width: '900px',
+            modal: true,
+            position: { my: "top", at: "top", of: window }
+        });
+
+        $('#CreatePopupButton').click(function () {
+            $('#CreatePopup').load('@Url.Action("Create", "PatientLog")', function () {
+                $(this).dialog({
+                    modal: true,
+                    height: 'auto',
+                    width: 'auto',
+                    title: 'Create New Patient',
+                    position: { my: "top", at: "bottom", of: $('#txtTo') }
+                });
+            });
+        });
+
+        $('.btn-danger').click(function (e) {
+            e.preventDefault();
+            var destination = $(this).attr("href");
+            var button = e.delegateTarget;
+            var row = $(button).parent().parent().parent();
+            var popuplocation = $(row).find('[data-name=Hospital]');
+            $('#CreatePopup').load(destination, function () {
+                $(this).dialog({
+                    modal: true,
+                    height: 'auto',
+                    width: 'auto',
+                    title: 'Delete This Patient',
+                    position: { my: "top", at: "bottom", of: popuplocation }
+                });
+            });
+        });
+        $('[name=Copy]').click(function (e) {
+            e.preventDefault();
+            var destination = $(this).attr("href");
+            var button = e.delegateTarget;
+            var row = $(button).parent().parent().parent();
+            var popuplocation = $(row).find('[data-name=Hospital]');
+            $('#CreatePopup').load(destination, function () {
+                $(this).dialog({
+                    modal: true,
+                    height: 'auto',
+                    width: 'auto',
+                    title: 'Copy This Patient',
+                    position: { my: "top", at: "top", of: popuplocation }
+                });
+            });
+        });
+        $('#HospitalsPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Hospitals",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            dialogClass: "noTitleBar",
+            position: { my: "top", at: "bottom", of: $('#txtHospitals') }
+        });
+
+        $('#ServiceTypesPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Service Types",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            dialogClass: "noTitleBar",
+            position: { my: "top", at: "bottom", of: $('#txtServiceTypes') }
+        });
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedHospitals));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.hospcheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var hospmax = @totalHosp; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == hospmax || max == 0) {
+            $('#chkhospAll').prop('checked', true);
+            $('#txtHospitals').val('ALL');
+        }
+
+        checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedServices));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.servcheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var servmax = @totalServ; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == servmax || max == 0) {
+            $('#chkservAll').prop('checked', true);
+            $('#txtServiceTypes').val('ALL');
+        }
+
+        checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+    });
+    function checkboxHiddenUpdate(hid, className) {
+        var data = [];
+        $('.' + className).each(function () {
+            if (this.checked) {
+                data.push(this.value);
+            }
+        });
+        hid.val(data);
+        if (className == "hospcheck")
+        {
+            if (data.length == 0)
+            {
+                $('#txtHospitals').val('ALL');
+            }
+            else {
+                $('#txtHospitals').val(data);
+            }           
+        }
+        if (className == "servcheck")
+        {
+            if (data.length == 0) {
+                $('#txtServiceTypes').val('ALL');
+            }
+            else {
+                $('#txtServiceTypes').val(data);
+            }
+        }
+    }
+    function toggleHosp(chk) {
+        if (chk.checked) {
+            var hosp = [];
+            $('.hospcheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = '';
+                hosp.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck'); //This is removed because otherwise all hospitals are submitted to the server and the query unnecessarily performs filtering
+            $('#hidHospitals').val("");
+            $('#txtHospitals').val('ALL');
+        }
+        else {
+            $('.hospcheck').each(function () {
+                this.checked = chk.checked;
+            });
+            checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+        }
+    }
+    function selectHosp() {
+        checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+        $('#chkhospAll').prop('checked', false);
+    }
+    function toggleService(chk) {
+        if (chk.checked) {
+            var serv = [];
+            $('.servcheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = '';
+                serv.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+            $('#hidServices').val("");
+            $('#txtServiceTypes').val('ALL');
+        }
+        else {
+            $('.servcheck').each(function () {
+                this.checked = chk.checked;
+            });
+            checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+        }
+    }
+    function selectService() {
+        checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+        $('#chkservAll').prop('checked', false);
+    }
+    function triggerSubmit() {
+        $('[name=submit]').click();
+    }
+    function showNotes(btn) {
+        var cell = $(btn).parent();
+        var row = $(btn).parent().parent();
+        var txt = $(cell).find('#hidNotes').val();
+        var id = $(row).find('[data-name=ID]').html();
+        $('#notesView').val(txt);
+        txt = $(cell).find('#hidComments').val();
+        $('#commentsView').val(txt);
+        $('#NotesPopupID').val(id);
+        //Set tabs back to default
+        $('a[href="#tabs-1"]').click();
+        $('#NotesPopupOuter').dialog('open');
+    }
+    function closeNotes()
+    {
+        $('#NotesPopupOuter').dialog('close');
+    }
+    function closeFilters()
+    {
+        if ($('#HospitalsPopup').dialog('isOpen'))
+        {
+            $('#HospitalsPopup').dialog('close');
+        }
+        if ($('#ServiceTypesPopup').dialog('isOpen')) {
+            $('#ServiceTypesPopup').dialog('close');
+        }
+    }
+    function showHospitals() {
+        closeFilters();
+        $('#HospitalsPopup').dialog('open');
+    }
+    function showServiceTypes() {
+        closeFilters();
+        $('#ServiceTypesPopup').dialog('open');
+    }
+    function enableSaveNotesButton()
+    {
+        $('[name=SaveNotesButton]').prop('disabled', '');
+    }
+    function saveNotes() {
+        var id = $('#NotesPopupID').val();
+        var notes = $('#notesView').val();
+        var comments = $('#commentsView').val();
+        $.ajax({
+            type: 'POST',
+            url: 'PatientLog/jsonSaveNotes',
+            contentType: 'application/json; charset=utf-8',
+            async: false,
+            data: JSON.stringify({ ID: id, Notes: notes, Comments: comments }),
+            dataType: 'json',
+            success: function (response) {
+                //Find this row again, not the best solution but hey I'm one dude
+                var row;
+                $('.grid-row').each(function () {
+                    var idcell = $(this).find('[data-name=ID]');
+                    if (idcell.html() == id)
+                    {
+                        row = idcell.parent();
+                        return false;
+                    }
+                });
+                $(row).find('#hidNotes').val(notes);
+                $(row).find('#hidComments').val(comments);
+                closeNotes();
+            },
+            failure: function (response) {
+                alert(response.responseText);
+            }
+        });
+    }
+</script>
+<style type="text/css">
+    .centered .ui-tabs-nav {
+        text-align: center;
+    }
+    .centered .ui-tabs-nav li {
+        display: inline-block;
+        float: none;
+    }
+    .centered .ui-state-active {
+        border: 5px solid yellow;
+    }
+    .centered .ui-state-focus {
+        border: 5px solid yellow;
+    }
+    .centered .ui-tabs-active {
+        border: 5px solid yellow;
+    }
+    #ui-id-3 {
+        border: none;
+    }
+</style>
+<div class="AIMSBanner">
+    <div>@displayName's Patients </div>
+</div>
+
+@using (Html.BeginForm("Index", "PatientLog", FormMethod.Post, new { id = "indexForm" }))
+{
+    <span>
+        <a class="btn btn-primary btn-sm" id="CreatePopupButton">
+            <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span>
+            <span>Create New</span>
+        </a>
+        @Html.Raw("&nbsp;")
+        <span id="QuickEditSpan">
+            <a type="button" class="btn btn-success btn-sm" style="margin-right: 50px;" name="QuickEdit"
+               href="@Url.Action("EditAll", "PatientLog")">
+                <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                <span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span>
+                <span>Edit All</span>
+            </a>
+        </span>
+        @Html.Raw("&nbsp;")
+        <strong>From: </strong><input type="text" name="FromDate" id="txtFrom" class="date-picker textdate" value="@Model.FromDate" onchange="javascript:triggerSubmit();" />
+        @Html.Raw("&nbsp;")
+        <strong>To: </strong><input type="text" name="ToDate" id="txtTo" class="date-picker textdate" value="@Model.ToDate" onchange="javascript:triggerSubmit();" />
+        @Html.Raw("&nbsp;")
+        @*<button type="button" class="btn btn-primary btn-sm" style="margin-right: 50px;" onclick="$('#FiltersPopupOuter').dialog('open');" id="btnFilters">
+            Apply Additional Filters <i class="glyphicon glyphicon-filter"></i>
+        </button>*@
+        @Html.Raw("&nbsp;")
+        <button type="submit" name="submit" class="btn btn-primary btn-sm" value="Search" style="display: none;">
+            Go <i class="glyphicon glyphicon-arrow-right"></i>
+        </button>
+        @Html.Raw("&nbsp;")
+        @*<input type="checkbox" id="chkAssigned" name="chkAssigned" checked="@Model.Assigned" value="Show all assigned" title="Check this to show Assigned patients regardless of date" onclick="javascript:triggerSubmit();" /><label>Show All Assigned</label>*@
+        @Html.CheckBoxFor(c => c.Assigned, new { onclick="javascript:triggerSubmit();" }) <label>Show All Assigned</label>
+        @Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")
+        @Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")
+        @Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")
+        @Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")
+        <span style="white-space: nowrap"><strong>Hospitals: </strong><input type="text" name="txtpopup" id="txtHospitals" class="textdate" value="" onclick="javascript:showHospitals();" /></span>
+        @Html.Raw("&nbsp;")
+        <span style="white-space: nowrap"><strong>Type: </strong><input type="text" name="txtpopup" id="txtServiceTypes" class="textdate" value="" onclick="javascript:showServiceTypes();" /></span>
+    </span>
+    @*<div id="FiltersPopupOuter" style="display: none; border: 1px solid royalblue;">
+        <span style="width: 400px;">
+            <span class="col-sm-6" style="font-weight: bolder"><u>Select Hospitals</u></span>
+            <span class="col-sm-6" style="font-weight: bolder">
+                <u>Select ServiceType</u>
+            </span>*@
+    <div id="HospitalsPopup" name="NonModalPopup" style="display: none;">
+        <div class="col-sm-12" style="overflow-y: auto;">
+            <input type="checkbox" value="ALL" id="chkhospAll" onclick="javascript:toggleHosp(this)" /><strong>ALL</strong><br />
+            @{foreach (SelectListItem hosp in Model.HospitalList)
+                {
+                    <input type="checkbox" class="hospcheck" onclick="javascript:selectHosp()" value="@hosp.Value" />@hosp.Text <br />
+                }
+            }
+        </div>
+        <input type="button" onclick="javascript:closeFilters();" value="Close Popup" style="margin-top: 50px; padding-top: 5px; padding-bottom: 5px;" />
+        <button type="submit" name="applyFilters" class="btn btn-primary btn-sm" style="float: right; margin-top: 50px; padding-top: 5px; padding-bottom: 5px;" onclick="javascript:triggerSubmit();">
+            Apply Filters <i class="glyphicon glyphicon-arrow-right"></i>
+        </button>
+    </div>
+    <div id="ServiceTypesPopup" name="NonModalPopup" style="display: none;">
+        <div class="col-sm-12" style="overflow-y: auto;">
+            <input type="checkbox" value="ALL" id="chkservAll" onclick="javascript:toggleService(this)" /><strong>ALL</strong><br />
+            @{foreach (SelectListItem service in Model.ServiceList)
+                {
+                    <input type="checkbox" class="servcheck" onclick="javascript:selectService()" value="@service.Value" />@service.Text <br />
+                }
+            }
+        </div>
+        @*</span>
+                </span>
+            <div>*@
+        <input type="button" onclick="javascript:closeFilters();" value="Close Popup" style="margin-top: 50px; padding-top: 5px; padding-bottom: 5px;" />
+        <button type="submit" name="applyFilters" class="btn btn-primary btn-sm" style="float: right; margin-top: 50px; padding-top: 5px; padding-bottom: 5px;" onclick="javascript:triggerSubmit();">
+            Apply Filters <i class="glyphicon glyphicon-arrow-right"></i>
+        </button>
+    </div>
+
+        <div id="CreatePopup"></div>
+
+
+    <input type="hidden" id="hidPhysicians" name="hidPhysicians" value="@HubSecurity.getLoggedInUserID()" />
+    <input type="hidden" id="hidHospitals" name="hidHospitals" value="@Html.Raw(Json.Encode(Model.SelectedHospitals))" />
+    <input type="hidden" id="hidServices" name="hidServices" value="@Html.Raw(Json.Encode(Model.SelectedServices))" />
+    <input type="hidden" id="SortDirection" name="SortDirection" value="@Model.SortDirection" />
+    <input type="hidden" id="SortColumn" name="SortColumn" value="@Model.SortColumn" />
+    <input type="hidden" id="FilterType" name="FilterType" value="@Model.FilterType" />
+    <input type="hidden" id="FilterColumn" name="FilterColumn" value="@Model.FilterColumn" />
+    <input type="hidden" id="FilterValue" name="FilterValue" value="@Model.FilterValue" />
+    foreach (KeyValuePair<string, string> key in Model.RiskFactor)
+    {
+        <input type="hidden" id="@key.Key" name="HiddenRiskValues" value="@key.Value" />
+    }
+
+    <div id="NotesPopupOuter" style="display: none">
+        <div style="text-align: right;"><input id="SaveNotesButton" name="SaveNotesButton" class="btn btn-success btn-sm" style="margin-right: 15px;" type="button" value="Save Changes and Close" onclick="javascript:saveNotes();" disabled="disabled" /><input type="button" value="Close Popup" class="btn btn-danger btn-sm" onclick="javascript:closeNotes();" /></div>
+        <div id="tabs" data-role="tabs" class="centered">
+            <ul>
+                <li><a href="#tabs-1">Comments</a></li>
+                <li><a href="#tabs-2">Notes</a></li>
+            </ul>
+            <div id="tabs-1">
+                <textarea id="commentsView" style="overflow: scroll; margin: 0; padding: 0; width: 800px; height: 600px;" onkeypress="javascript:enableSaveNotesButton();"></textarea>
+            </div>
+            <div id="tabs-2">
+                <textarea id="notesView" style="overflow: scroll; margin: 0; padding: 0; width: 800px; height: 600px;" onkeypress="javascript:enableSaveNotesButton();"></textarea>
+            </div>           
+            <input type="hidden" id="NotesPopupID" name="NotesPopupID" />
+        </div>
+    </div>
+    <table id="patientGrid" class="table table-bordered table-striped">
+        <tr>
+            <th>Actions</th>
+            <th style="display: none;">ID</th>
+            <th><a href="#" class="SortLink" data-name="ServiceDate" name="SortLink" id="SortServiceDate">ServiceDate</a><i name="sortArrow"></i></th>
+            <th style="display: none;">Physician</th>
+            <th><a href="#" class="SortLink" data-name="Hospital" name="SortLink" id="SortHospital">Hospital</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="PCP_Practice" name="SortLink" id="SortPCP_Practice">PCP_Practice</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="PatientName" name="SortLink" id="SortPatientName">PatientName</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="MRN_FIN" name="SortLink" id="SortMRN_FIN">MRN_FIN</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="RoomNo" name="SortLink" id="SortRoomNo">RoomNo</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="ServiceType" name="SortLink" id="SortServiceType">ServiceType</a><i name="sortArrow"></i></th>
+            <th>Comments/Notes</th>
+        </tr>
+        @foreach (var p in Model.Patients)
+        {
+            <tr>
+                <td>@Html.Partial("_TableButtonsPartial", new SmallButtonModel { Id = p.ID })</td>
+                <td style="display: none;" data-name="ID">@Html.DisplayFor(model => p.ID)</td>
+                <td data-name="ServiceDate">@Html.DisplayFor(model => p.ServiceDate)</td>
+                <td style="display: none;" data-name="Physician">@Html.DisplayFor(model => p.Physician)</td>
+                <td data-name="Hospital">@Html.DisplayFor(model => p.Hospital)</td>
+                <td data-name="PCP_Practice">@Html.DisplayFor(model => p.PCP_Practice)</td>
+                <td data-name="PatientName">@Html.ActionLink(p.PatientName.ToString(), "PatientSort", "PatientLog", new { patientName = p.PatientName }, null)</td>
+                <td data-name="MRN_FIN">@Html.DisplayFor(model => p.MRN_FIN)</td>
+                <td data-name="RoomNo">@Html.DisplayFor(model => p.RoomNo)</td>
+                <td data-name="ServiceType">@Html.DisplayFor(model => p.ServiceType)</td>
+                <td >@Html.Partial("_ButtonWith2HiddenPartial", new ButtonWithHidden2 { cls = "btn btn-info", valu = p.Notes, jqueryFunction = "showNotes(this)", plogCol = "Notes", valu2 = p.Comments, plogCol2 = "Comments" })</td>
+            </tr>
+        }
+    </table>
+}

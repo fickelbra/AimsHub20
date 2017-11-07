@@ -1,0 +1,201 @@
+﻿@model PCPCommunicationManageViewModel
+@using AimsHub.Models;
+@using AimsHub.ViewModels
+
+@{
+    ViewBag.Title = "PatientLog";
+    int totalHosp = Model.HospitalList.Count();
+    int totalPCP = Model.PCPList.Count();
+}
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        $("#ThisGuy").dialog({
+            autoOpen: false,
+            resizable: true,
+            draggable: true,
+            title: "Select Hospitals",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            position: { my: "top", at: "bottom", of: $('#SearchHospital') }
+        });
+
+        $("#PopupService").dialog({
+            autoOpen: false,
+            resizable: true,
+            draggable: true,
+            title: "Select PCPs",
+            height: 'auto',
+            width: '500px',
+            modal: false,
+            position: { my: "top", at: "bottom", of: $('#SearchPCP') }
+        });
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedHospitals));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.hospcheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var hospmax = @totalHosp; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == hospmax || max == 0) {
+            $('#chkhospAll').prop('checked', true);
+        }
+
+        checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedPCPs));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.pcpcheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var pcpmax = @totalPCP; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == pcpmax || max == 0) {
+            $('#chkpcpAll').prop('checked', true);
+        }
+
+        checkboxHiddenUpdate($('#hidPCPs'), 'pcpcheck');
+    });
+
+    function checkboxHiddenUpdate(hid, className) {
+        var data = [];
+        $('.' + className).each(function () {
+            if (this.checked) {
+                data.push(this.value);
+            }
+        });
+        hid.val(data);
+    }
+    function toggleHosp(chk) {
+        if (chk.checked) {
+            var hosp = [];
+            $('.hospcheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = '';
+                hosp.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck'); //This is removed because otherwise all hospitals are submitted to the server and the query unnecessarily performs filtering
+            $('hidHospitals').val("");
+        }
+        else {
+            $('.hospcheck').each(function () {
+                this.checked = chk.checked;
+            });
+            checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+        }
+    }
+    function selectHosp() {
+        checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+        $('#chkhospAll').prop('checked', false);
+    }
+    function togglePCP(chk) {
+        if (chk.checked) {
+            var hosp = [];
+            $('.pcpcheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = '';
+                hosp.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck'); //This is removed because otherwise all hospitals are submitted to the server and the query unnecessarily performs filtering
+            $('hidPCPs').val("");
+        }
+        else {
+            $('.pcpcheck').each(function () {
+                this.checked = chk.checked;
+            });
+            checkboxHiddenUpdate($('#hidPCPs'), 'pcpcheck');
+        }
+    }
+    function selectPCP() {
+        checkboxHiddenUpdate($('#hidPCPs'), 'pcpcheck');
+        $('#chkpcpAll').prop('checked', false);
+    }
+
+    function showPopupHospital() {
+        $('#ThisGuy').dialog('open');
+        closePopupService();
+    }
+    function showPopupPCP() {
+        $('#PopupPCP').dialog('open');
+        closePopupHospital();
+    }
+    function closePopupHospital() {
+        $('#ThisGuy').dialog('close');
+    }
+    function closePopupPCP() {
+        $('#PopupPCP').dialog('close');
+    }
+</script>
+
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<script src="~/Scripts/gridmvc.js"></script>
+<link href="~/Content/Gridmvc.css" rel="stylesheet" />
+<div class="AIMSBanner">
+    Manage PCP Communications
+</div>
+
+<form id="manageForm" class="form-horizontal">
+    <span class="col-md-12">
+        <span class="col-md-4">
+            <strong>From: </strong><input type="text" name="FromDate" id="txtFrom" class="date-picker textdate" value="@Model.FromDate" onchange="javascript:triggerSubmit();" />
+            @Html.Raw("&nbsp;")
+            <strong>To: </strong><input type="text" name="ToDate" id="txtTo" class="date-picker textdate" value="@Model.ToDate" onchange="javascript:triggerSubmit();" />
+            @Html.Raw("&nbsp;")
+        </span>
+        <span class="col-md-4">
+            <span style="font-weight:bolder; white-space: nowrap; margin-right: 10px;">Hospital: <input type="text" name="SearchHospital" id="SearchHospital" onclick="javascript:showPopupHospital()" style="width: 80px; color: black;" /></span>
+            <span style="font-weight:bolder; white-space: nowrap; margin-right: 10px;">Based On:</span> @Html.EnumDropDownListFor(x => x.basedOn)
+        </span>
+        <span class="col-md-4">
+            <span style="font-weight:bolder; white-space: nowrap; margin-right: 10px;">PCP: <input type="text" name="SearchPCP" id="SearchPCP" onclick="javascript:showPopupPCP()" style="width: 80px; color: black;" /></span>
+            <button type="submit" name="submit" class="btn btn-primary btn-sm" value="Search">
+                Go <i class="glyphicon glyphicon-arrow-right"></i>
+            </button>
+        </span>
+    </span>
+
+
+    <div id="ThisGuy" style="display: none;">
+        <span class="col-sm-12" style="overflow-y: auto;">
+            <input type="checkbox" value="ALL" id="chkhospAll" onclick="javascript:toggleHosp(this)" /><strong>ALL</strong><br />
+            @{foreach (SelectListItem hosp in Model.HospitalList)
+                {
+                    <input type="checkbox" class="hospcheck" onclick="javascript:selectHosp()" value="@hosp.Value" />@hosp.Text <br />
+                }
+            }
+        </span>
+        <input type="button" id="closePopupHospital" value="Close Popup" onclick="javascript:closePopupHospital();" />
+    </div>
+    <div id="PopupPCP" style="display: none;">
+        <span class="col-sm-12" style="overflow-y: auto;">
+            <input type="checkbox" value="ALL" id="chkpcpAll" onclick="javascript:togglePCP(this)" /><strong>ALL</strong><br />
+            @{foreach (SelectListItem pcp in Model.PCPList)
+                {
+                    <input type="checkbox" class="hospcheck" onclick="javascript:selectPCP()" value="@pcp.Value" />@pcp.Text <br />
+                }
+            }
+        </span>
+        <input type="button" id="closePopupPCP" value="Close Popup" onclick="javascript:closePopupPCP();" />
+    </div>
+
+</form>
+

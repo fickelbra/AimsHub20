@@ -1,0 +1,164 @@
+﻿@model PatientLogCreateViewModel
+@using AimsHub.ViewModels;
+
+@{
+    ViewBag.Title = "PatientLog";
+    string defaultDate = DateTime.Now.ToShortDateString();
+    Layout = string.Empty;
+}
+<link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+<style type="text/css">
+    .patient {
+        width: 220px;
+    }
+
+    .mrn {
+        width: 170px;
+    }
+
+    table tr td {
+        padding: 7px;
+    }
+
+    .dob {
+        width: 120px;
+    }
+
+    .comments {
+        height: 150px;
+        width: 100%;
+    }
+
+    .drop {
+        height: 30px;
+    }
+</style>
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<script type='text/javascript'>
+    $(document).ready(function () {
+        $('#ServiceDate').val('@defaultDate');
+    });
+    $(function () {
+        $('#banana').change(function () {
+            $.getJSON('/PatientLog/jsonPCP',
+                { site: $('#banana').val() }, function (result) {
+                    var ddl = $('#foo2');
+                    ddl.empty();
+                    ddl.append('<option selected="selected">No PCP</option>');
+                    $(result).each(function () {
+                        $(document.createElement('option'))
+                            .attr('value', this.Id)
+                            .text(this.Value)
+                            .appendTo(ddl);
+                        ddl.Add
+                    });
+                });
+        });
+    });
+</script>
+
+@using (Html.BeginForm("Create", "PatientLog", FormMethod.Post)) 
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div style="background-color: royalblue; width: 100%; height: 30px;" class="img-rounded">
+            <h3 style="margin-left: 20px; color: white;">Patient Info</h3>
+        </div>
+        <table>
+            <tr>
+                <td>
+                    @Html.LabelFor(model => model.Patient.PatientName, htmlAttributes: new { @class = "control-label col-md-1" })
+                </td>
+                <td>
+                    @Html.EditorFor(model => model.Patient.PatientName, new { htmlAttributes = new { @class = "form-control patient" } })
+                    @Html.ValidationMessageFor(model => model.Patient.PatientName, "", new { @class = "text-danger" })
+                </td>
+                <td>
+                    @Html.LabelFor(model => model.Patient.MRN_FIN, htmlAttributes: new { @class = "control-label col-md-1" })
+                </td>
+                <td>
+                    @Html.EditorFor(model => model.Patient.MRN_FIN, new { htmlAttributes = new { @class = "form-control mrn" } })
+                    @Html.ValidationMessageFor(model => model.Patient.MRN_FIN, "", new { @class = "text-danger" })
+                </td>
+                <td>
+                    @Html.LabelFor(model => model.Patient.DOB, htmlAttributes: new { @class = "control-label col-md-1" })
+                </td>
+                <td>
+                    @Html.EditorFor(model => model.Patient.DOB, new { htmlAttributes = new { @class = "form-control dob date-pickerDOB" } })
+                    @Html.ValidationMessageFor(model => model.Patient.DOB, "", new { @class = "text-danger" })
+                </td>
+                <td>
+                    @Html.LabelFor(model => model.Patient.Gender, htmlAttributes: new { @class = "control-label col-md-1" })
+                </td>
+                <td>
+                    @Html.DropDownListFor(model => model.Patient.Gender, Model.GenderList, null, new { @class = "form-control drop" })
+                    @Html.ValidationMessageFor(model => model.Patient.Gender, "", new { @class = "text-danger" })
+                </td>
+            </tr>
+
+        </table>
+        <hr />
+        <div style="background-color: royalblue; width: 100%; height: 30px;" class="img-rounded">
+            <h3 style="margin-left: 20px; color: white;">Service Info</h3>
+        </div>
+        <table>
+            <tr>
+                <td>
+                    @Html.LabelFor(model => model.Patient.Hospital, htmlAttributes: new { @class = "control-label col-md-1" })
+                </td>
+                <td>
+                    @Html.DropDownListFor(model => model.Patient.Hospital, Model.HospitalList, null, new { @class = "form-control drop", id = "banana" })
+                    @Html.ValidationMessageFor(model => model.Patient.Hospital, "", new { @class = "text-danger" })
+                </td>
+                <td>
+                    @Html.LabelFor(model => model.Patient.PCP_Practice, htmlAttributes: new { @class = "control-label col-md-1" })
+                </td>
+                <td>
+                    @Html.DropDownListFor(model => model.Patient.PCP_Practice, Model.PCPList, "No PCP", new { @class = "form-control drop", id = "foo2" } )
+                    @Html.ValidationMessageFor(model => model.Patient.PCP_Practice, "", new { @class = "text-danger" })
+                </td>
+                <td>
+                    @Html.LabelFor(model => model.Patient.PatientClass, htmlAttributes: new { @class = "control-label col-md-1" })
+                </td>
+                <td>
+                    @Html.DropDownListFor(model => model.Patient.PatientClass, Model.PatientClassList, null, new { @class = "form-control drop" })
+                    @Html.ValidationMessageFor(model => model.Patient.PatientClass, "", new { @class = "text-danger" })
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    @Html.LabelFor(model => model.Patient.ServiceType, htmlAttributes: new { @class = "control-label col-md-1" })
+                </td>
+                <td>
+                    @Html.DropDownListFor(model => model.Patient.ServiceType, Model.ServiceTypeList, null, new { @class = "form-control drop" })
+                    @Html.ValidationMessageFor(model => model.Patient.ServiceType, "", new { @class = "text-danger" })
+                </td>
+                <td>
+                    @Html.LabelFor(model => model.Patient.ServiceDate, htmlAttributes: new { @class = "control-label col-md-1" })
+                </td>
+                <td>
+                    @Html.EditorFor(model => model.Patient.ServiceDate, new { htmlAttributes = new { @class = "form-control date-picker", id = "ServiceDate" } })
+                    @Html.ValidationMessageFor(model => model.Patient.ServiceDate, "", new { @class = "text-danger" })
+                </td>
+                <td>
+                    @Html.LabelFor(model => model.Patient.RoomNo, htmlAttributes: new { @class = "control-label col-md-1" })
+                </td>
+                <td>
+                    @Html.EditorFor(model => model.Patient.RoomNo, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Patient.RoomNo, "", new { @class = "text-danger" })
+                </td>
+            </tr>
+        </table>
+    </div>
+<div class="form-group">    
+    <input type="submit" value="Create" class="btn btn-success" />  |  
+    @*<a href="@Url.Action("Index", "PatientLog")" class="btn btn-danger btn-sm" style="color: white;">
+        <span class="glyphicon-list" aria-hidden="true">
+        </span>
+        <span>Cancel Changes</span>
+    </a>*@
+    <input type="button" class="btn btn-danger btn-sm" value="Cancel" style="color: white;" onclick="$('#CreatePopup').dialog('close');" />
+</div>
+}

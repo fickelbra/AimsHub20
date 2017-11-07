@@ -1,0 +1,299 @@
+﻿@model ScheduleCreateViewModel
+@using AimsHub.ViewModels
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+<link href="~/Content/jquery-ui.min.css" rel="stylesheet" />
+<script src="~/Scripts/jquery-3.2.1.min.js"></script>
+<script src="~/Scripts/jquery-ui.min.js"></script>
+<script src="~/Scripts/AIMScommon.js"></script>
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('.date-picker').datepicker();
+        $('.patternOn').each(function () {
+            $(this).css('display', 'none');
+        });
+        $('.repeatOn').each(function () {
+            $(this).css('display', 'none');
+        });
+        $('.repeatWeekly').each(function () {
+            $(this).css('display', 'none');
+        });
+        updateTitle();
+
+        $('#f').submit(function (e) {
+            e.preventDefault();
+            $.post($(this).action, $(this).serialize(), function (result) {
+            if (result == "success") {
+                close();
+            }
+            else {
+                alert('Something went wrong.. please notify IT');
+            }
+        });
+        return false;
+        });
+    });
+    function close(result) {
+            parent.DayPilot.ModalStatic.close();
+    }
+    //function formSubmit(e) {
+    //    var f = $("#f");
+    //    $.post(f.action, f.serialize(), function (result) {
+    //        if (result == "success") {
+    //            close();
+    //        }
+    //        else {
+    //            alert('Something went wrong.. please notify IT');
+    //        }
+    //    });
+    //    return false;
+    //}
+
+    function updateTitle() {
+        var title;
+        var theType = $('#DefaultType').val();
+        theType = theType.substring(theType.indexOf("(") + 1, theType.indexOf(")"));
+        title = $('#DefaultHospital').val() + "-" + theType + "-" + $('#DefaultUser').val().substring(1);
+        $('#txtTitle').val(title);
+    }
+    function togglePattern(chk)
+    {
+        if (chk.checked)
+        {
+            $('.patternOn').css('display', 'inherit');
+            $('.patternOff').css('display', 'none');
+            $('[name=chkPattern]').attr('checked', 'checked');
+            $('.repeatOn').each(function () {
+                $(this).css('display', 'none');
+            });
+            $('.repeatWeekly').each(function () {
+                $(this).css('display', 'none');
+            }); 
+        }
+        else {
+            $('.patternOn').css('display', 'none');
+            $('.patternOff').css('display', 'inherit');
+            $('[name=chkPattern]').attr('checked', '');
+            $('#Repeat').val("None");
+        }
+    }
+    function updateRepeat(drp)
+    {
+        switch ($(drp).val())
+        {
+            case "None":
+                $('.repeatOn').each(function () {
+                    $(this).css('display', 'none');
+                });
+                $('.repeatWeekly').each(function () {
+                    $(this).css('display', 'none');
+                }); 
+                break;
+            case "Daily":
+                $('.repeatOn').each(function () {
+                    $(this).css('display', 'inherit');
+                });
+                $('.repeatWeekly').each(function () {
+                    $(this).css('display', 'none');
+                });   
+                break;
+            case "Weekly":
+                $('.repeatOn').each(function () {
+                    $(this).css('display', 'inherit');
+                });
+                $('.repeatWeekly').each(function () {
+                    $(this).css('display', 'inherit');
+                });                
+                break;
+        }
+    }
+</script>
+<style type="text/css">
+    label {
+        margin-right: 15px;
+    }
+    td {
+        padding: 2px;
+    }
+    input[name="Title"] {
+        min-width: 150px;
+    }
+    input[name="StartDateString"] {
+        max-width: 120px;
+    }
+    select {
+        min-width: 200px;
+    }
+    .mini {
+        min-width: 50px;
+    }
+    textarea {
+        min-width: 300px;
+        min-height: 80px;
+    }
+    .patternOn {
+        margin-top: 5px;
+    }
+
+</style>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Create</title>
+</head>
+<body>
+    <form id="f" method="post" action="Create">
+        <div class="col-lg-12">
+            <div class="col-lg-offset-2">
+                <h2>New Schedule</h2>
+            </div>
+        </div>
+        <table style="margin-left: auto; margin-right: auto;">
+            <tr>
+                <td align="right">
+                    <label>User: </label> 
+                </td>
+                <td>
+                    @Html.DropDownListFor(model => model.DefaultUser, Model.Users, null, new { @width = "100%", onchange="javascript:updateTitle()" })
+                </td>
+            </tr>
+
+            <tr>
+                <td align="right">
+                    <label>Hospital: </label>
+                </td>
+                <td align="left">
+                    @Html.DropDownListFor(model => model.DefaultHospital, Model.Hospitals, null, new { onchange = "javascript:updateTitle()" })
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label class="patternOff">Type: </label>
+                    <label class="patternOn">Pattern: </label>
+                </td>
+                <td align="left">
+                    @Html.DropDownListFor(model => model.DefaultType, Model.Types, null, new { onchange = "javascript:updateTitle()", @class="patternOff" }) @Html.DropDownListFor(model => model.Patterns, Model.Patterns, null, new { @class = "patternOn" }) <label><input type="checkbox" value="Use Pattern" id="chkPattern" name="chkPattern" onchange="javascript:togglePattern(this)" />Use Pattern</label>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label class="patternOff">Start: </label>
+                    <label class="patternOn">Do Until: </label>                    
+                </td>
+                <td align="left">
+                    @Html.TextBox("txtStartDate", Model.StartDate.ToShortDateString(), new { @class = "date-picker patternOff", @readonly="readonly" }) @Html.DropDownListFor(model => model.StartHour, Model.Hours, null, new { @class = "mini patternOff" }) @Html.DropDownListFor(model => model.Minutes, Model.Minutes, null, new { @class = "mini patternOff" })
+                    @Html.TextBox("txtDoUntil", Model.PatternUntilDate.ToShortDateString(), new { @class = "date-picker patternOn" })
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label class="patternOff">End: </label>
+                    <label class="patternOn">2nd Hospital: </label>
+                </td>
+                <td align="left">
+                    @Html.TextBox("txtEndDate", Model.EndDate.ToShortDateString(), new { @class = "date-picker patternOff", @readonly = "readonly" }) @Html.DropDownListFor(model => model.EndHour, Model.Hours, null, new { @class = "mini patternOff" }) @Html.DropDownListFor(model => model.Minutes, Model.Minutes, null, new { @class = "mini patternOff" })
+                    @Html.DropDownListFor(model => model.SecondHospital, Model.SecondHospitals, null, new { @class = "patternOn" })
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label class="patternOff">Title: </label>
+                </td>
+                <td align="left">
+                    @Html.TextBoxFor(model => model.Title, new { @id = "txtTitle", @class = "patternOff" })
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label class="patternOff">Comments: </label>
+                </td>
+                <td align="left">
+                    @Html.TextAreaFor(model => model.Comments, new { @id = "txtComments", @class = "patternOff", @width = "400px", @height = "300px" })
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label class="patternOff">Repeat: </label>
+                </td>
+                <td align="left">
+                    @Html.DropDownListFor(model => model.Repeat, Model.Repeat, null, new { @class = "patternOff", style="max-width: 50px;", onchange="javascript:updateRepeat(this)" })
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label class="repeatOn">Repeat Every: </label>
+                </td>
+                <td align="left">
+                    @Html.TextBoxFor(model => model.RepeatInterval, new { style="max-width: 50px; min-width: 50px;", @class="repeatOn" })
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label class="repeatWeekly">On Days: </label>
+                </td>
+                <td align="left" style="max-width: 300px;">
+                    <span>
+                        <label class="repeatWeekly" style="white-space: nowrap;">
+                            <input type="checkbox" id="chkSunday" name="chkSunday" value="Sun" style="width: 25px;" />
+                            Sun
+                        </label>
+
+                        <label class="repeatWeekly" style="white-space: nowrap;">
+                            <input type="checkbox" id="chkMonday" name="chkMonday" value="Mon" style="width: 25px;" />
+                            Mon
+                        </label>
+
+                        <label class="repeatWeekly" style="white-space: nowrap;">
+                            <input type="checkbox" id="chkTuesday" name="chkTuesday" value="Tue" style="width: 25px;" />
+                            Tue
+                        </label>
+
+                        <label class="repeatWeekly" style="white-space: nowrap;">
+                            <input type="checkbox" id="chkWednesday" name="chkWednesday" value="Wed" style="width: 25px;" />
+                            Wed
+                        </label>
+
+                        <label class="repeatWeekly" style="white-space: nowrap;">
+                            <input type="checkbox" id="chkThursday" name="chkThursday" value="Thu" style="width: 25px;" />
+                            Thu
+                        </label>
+
+                        <label class="repeatWeekly" style="white-space: nowrap;">
+                            <input type="checkbox" id="chkFriday" name="chkFriday" value="Fri" style="width: 25px;" />
+                            Fri
+                        </label>
+
+                        <label class="repeatWeekly" style="white-space: nowrap;">
+                            <input type="checkbox" id="chkSaturday" name="chkSaturday" value="Sat" style="width: 25px;" />
+                            Sat
+                        </label>
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label class="repeatOn">Repeat Until: </label>
+                </td>
+                <td align="left">
+                    @Html.TextBox("txtRepeatDate", Model.RepeatDate.ToShortDateString(), new { @class = "date-picker repeatOn", @readonly = "readonly" }) @Html.DropDownListFor(model => model.RepeatHour, Model.Hours, null, new { @class = "mini repeatOn" }) @Html.DropDownListFor(model => model.RepeatMinute, Model.Minutes, null, new { @class = "mini repeatOn" })
+                </td>
+            </tr>
+            
+        </table>
+        <hr />
+        <div style="margin-left: auto; margin-right: auto; text-align: center; margin-bottom: 20px;">
+            <span class="btn-group">
+                <button type="submit" id="btnUpdate" name="btnUpdate" value="Update" onclick="javascript:formSubmit(this)">Update</button>
+                <button type="button" id="btnCancel" name="btnCancel" value="Cancel" onclick="parent.DayPilot.ModalStatic.close()">Cancel</button>
+            </span>
+        </div>  
+    </form>
+</body>
+</html>

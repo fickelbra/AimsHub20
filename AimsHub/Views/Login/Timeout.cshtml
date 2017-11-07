@@ -1,0 +1,24 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Aims Hub 2.0 - Timed Out</title>
+</head>
+<body>
+    <div class="form-horizontal" style="margin-left: auto; margin-right: auto; text-align: center;">
+        <div>
+            <img src="~/Images/AimsLogoHub.png" class="img-rounded" style="width: 450px;" />
+        </div>
+        <div>
+            <label>Your session has timed out.<a href="@Url.Action("Index","Login")">Click here to log back in.</a></label>
+        </div>
+        <div style="color: red; font-weight: bolder; width: 600px; margin-left: auto; margin-right: auto; text-align: left;">
+            @Html.ValidationSummary(false)
+        </div>
+    </div>
+</body>
+</html>

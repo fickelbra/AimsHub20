@@ -1,0 +1,745 @@
+﻿@model PatientAssignmentIndexViewModel
+@using AimsHub.ViewModels
+@using AimsHub.Models;
+@using GridMvc.Html
+@using AimsHub.Security
+@{
+    ViewBag.Title = "Patient Assignment";
+    //string displayName = "";
+    int totalPhy = Model.PhysicianList.Count();
+    int totalHosp = Model.HospitalList.Count();
+    int totalServ = Model.ServiceList.Count();
+    //bool isAdmin = (HubSecurity.isAdmin || HubSecurity.isSiteLeader);
+    //string javaIsAdmin = isAdmin ? "true" : "false";
+    //displayName = HubSecurity.getLoggedInDisplayName();
+}
+
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<style type="text/css">
+    td {
+        max-width: 150px;
+    }
+    input[type="button"] {
+        box-shadow: 2px 2px 2px #888888;
+    }
+</style>
+<script type='text/javascript'>
+    $(document).ready(function () {
+
+        //Set sort graphic
+        var col = $('#SortColumn').val();
+        var dir = $('#SortDirection').val();
+        var lnk = $('#Sort' + col);
+        var header = lnk.parent();
+        if (dir.indexOf('A') != -1) {
+            $(header).find('[name=sortArrow]').addClass('glyphicon glyphicon-triangle-bottom');
+        }
+        else {
+            $(header).find('[name=sortArrow]').addClass('glyphicon glyphicon-triangle-top');
+        }
+
+        //Make checkbox list "retain" values
+        var array = @Html.Raw(Json.Encode(Model.SelectedPhysicians));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.phycheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var phymax = @totalPhy; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == phymax || max == 0) {
+            $('#chkphyAll').prop('checked', true);
+        }
+
+        checkboxHiddenUpdate($('#hidPhysicians'), 'phycheck');
+
+        //Highlight rows yellow if the patient is of Observation patient class
+        $('[data-name=PatientClass]').each(function () {
+            if ($(this).html() == 'Obs')
+            {
+                var row = $(this).parent();
+                row.css('background-color', 'yellow');
+                row.prop('title', 'This patient has been marked as Observation');
+            }
+        });
+
+        $("#NotesPopupOuter").dialog({
+            autoOpen: false,
+            show: 'clip',
+            resizable: true,
+            draggable: true,
+            title: "Notes",
+            height: 'auto',
+            width: '900px',
+            modal: true,
+            position: { my: "top", at: "top", of: $('[data-gridname="patientGrid"]') }
+        });
+
+        $('#CreatePopupButton').click(function () {
+            $('#CreatePopup').load('@Url.Action("Create", "PatientAssignment")', function () {
+                $(this).dialog({
+                    modal: true,
+                    height: 'auto',
+                    width: 'auto',
+                    title: 'Create New Patient',
+                    position: { my: "top", at: "bottom", of: $('#txtTo') }
+                });
+            });
+        });
+
+        $("#FiltersPopupOuter").dialog({
+            autoOpen: false,
+            show: 'explode',
+            resizable: false,
+            draggable: true,
+            title: "Set Additional Filters",
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            position: { my: "top", at: "bottom", of: $('#txtTo')}
+        });
+
+        $("#ImportPopupOuter").dialog({
+            autoOpen: false,
+            show: 'explode',
+            resizable: true,
+            draggable: true,
+            title: "Import Patient List",
+            height: 'auto',
+            width: 'auto',
+            position: { my: "top", at: "bottom", of: $('[name=CopyButton]') }
+        });
+        $("#ExportPopup").dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Export",
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            position: { my: "top", at: "top", of: $('#patientGrid') }
+        });
+
+        $("#TallyPopup").dialog({
+            autoOpen: false,
+            show: 'explode',
+            resizable: true,
+            draggable: true,
+            title: "Tally",
+            height: 'auto',
+            width: 'auto',
+            position: { my: "top", at: "bottom", of: $('#btnTally') }
+        });
+
+        $('#btnImportFile').click(function (e) {
+            e.preventDefault;
+            //var fil = $('#ImportFileName').val();
+
+            $.ajax({
+                url: '/PatientAssignment/jsonImportFile',
+                type: "POST",
+                contentType: false,
+                processData: false,
+                data: function () {
+                    var data = new FormData();
+                    //data.append("name", $('#ImportFileName').val());
+                    data.append("file", $('#ImportFileName').get(0).files[0]);
+                    return data;
+                }(),
+                success: function (response) {
+                    var grid = $.parseJSON(response);
+                    var table = ToTable(grid);
+                    $('#ImportFileName').hide();
+                    $('#btnImportFile').hide();
+                    $('#btnCommitChanges').show();
+                    $('#resultView').append(table);
+                    $('#chkCopyPreviousDay').show();
+                    $('#chkCopyPreviousDayLabel').show();
+                    $('#chkSourceListFinal').show();
+                    $('#chkSourceListFinalLabel').show();
+                    $('#ImportHeader').html("<h3><strong>Identify columns and commit changes when done</strong></h3>");
+                    var cols = $(".imthefirstrow").find("td").length;
+
+                    for (var i = 0; i < cols; i++) {
+                        var newDrop = $('.dupDrop').clone();
+                        newDrop.removeClass('dupDrop');
+
+                        newDrop.find('.innerColumnName').html("Column " + (i + 1).toString());
+                        $('#columnSpan').append(newDrop);
+                    }
+                    },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+
+        });
+
+        $('#btnCommitChanges').on('click', function (e) {
+            e.preventDefault;
+            var columnValues = [];
+            var i = 0;
+
+            $('#columnSpan li').each(function () {
+                var selectList = $(this).find("select");
+                columnValues.push(selectList.val());
+                i++
+            });
+
+            $.ajax({
+                url: '/PatientAssignment/jsonImportFileCommit',
+                type: "POST",
+                contentType: false,
+                processData: false,
+                data: function () {
+                    var data = new FormData();
+                    var chkd = $('#chkCopyPreviousDay').is(':checked');
+                    var chks = $('#chkSourceListFinal').is(':checked');
+                    var hosp = $('#SelectedHospitals').val();
+                    //data.append("name", $('#ImportFileName').val());
+                    data.append("file", $('#ImportFileName').get(0).files[0]);
+                    data.append("columns", columnValues);
+                    data.append("copyDayBefore", chkd);
+                    data.append("sourceListFinal", chks);
+                    data.append("hospital", hosp);
+                    return data;
+                }(),
+                success: function (response) {
+                    triggerSubmit();
+                    //window.location.href = '@Url.Action("EditAll", "PatientAssignment")';
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        });
+
+        @*$('[name=copy]').on('click', function (e) {
+            e.preventDefault;
+            var i = 0;
+            var ids = [];
+            $('table tr').each(function () {
+                if (i == 0) {
+                }
+                else {
+                    if ($(this).find('#chkSelect').get(0).checked == true) {
+                        ids.push($(this).find('#ID').val());
+                    }
+                }
+                i++;
+            });
+
+            $.ajax({
+                url: '/PatientAssignment/jsonCopyPatients',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                processData: false,
+                data: JSON.stringify({ ids }),
+                cache: false,
+                success: function (response) {
+                    window.location.href = '@Url.Action("Index", "PatientAssignment")';
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        });*@
+
+        @*$('[name=delete]').on('click', function (e) {
+            e.preventDefault;
+            var i = 0;
+            var ids = [];
+            $('table tr').each(function () {
+                if (i == 0) {
+                }
+                else {
+                    if ($(this).find('#chkSelect').get(0).checked == true) {
+                        ids.push($(this).find('#ID').val());
+                    }
+                }
+                i++;
+            });
+
+            $.ajax({
+                url: '/PatientAssignment/jsonDeletePatients',
+                type: "POST",
+                contentType: false,
+                processData: false,
+                data: ids,
+                success: function (response) {
+                    window.location.href = '@Url.Action("Index", "PatientAssignment")';
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        });*@
+
+        function ToTable(dataArray) {
+            html = '<table class="table table-bordered" id="resultTable">';
+            var len = dataArray.length;
+
+            //Sloppy header addition. Don't care :)
+            html += '<tr>'
+            for (var i = 0; i < dataArray[0].length; i++)
+            {
+                html += '<td>Column' + i.toString() + '</td>'
+            }
+            html += '</tr>'
+            for (var i = 0; i < len; i++) {
+                if (i == 0)
+                {
+                    html += '<tr class="imthefirstrow">';
+                }
+                else {
+                    html += '<tr>';
+                }
+
+                for (var key in dataArray[i]) {
+                    html += '<td>' + dataArray[i][key] + '</td>';
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+            return html;
+        }
+
+        @*var array = @Html.Raw(Json.Encode(Model.SelectedHospitals));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.hospcheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var hospmax = @totalHosp; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == hospmax || max == 0) {
+            $('#chkhospAll').prop('checked', true);
+        }*@
+
+        //checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+
+        $('#hidHospitals').val($('#drpHospital').val());
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedServices));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.servcheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var servmax = @totalServ; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == servmax || max == 0) {
+            $('#chkservAll').prop('checked', true);
+        }
+
+        checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+    });
+    function checkboxHiddenUpdate(hid, className) {
+        var data = [];
+        $('.' + className).each(function () {
+            if (this.checked) {
+                data.push(this.value);
+            }
+        });
+        hid.val(data);
+    }
+    function toggleAll(chk) {
+        if (chk.checked)
+        {
+            $('.rowcheck').each(function () {
+                $(this).prop('checked', true);
+            });
+        }
+        else {
+            $('.rowcheck').each(function () {
+                $(this).prop('checked', false);
+            });
+        }
+        updateHiddenIDs();
+    }
+    function updateHiddenIDs()
+    {
+        var row;
+        var ids = [];
+        $('.rowcheck').each(function () {
+            if ($(this).prop('checked'))
+            {
+                row = $(this).parent().parent();
+                var id = row.find('td[data-name="ID"]').text();
+                ids.push(id);
+            }
+        });
+        $('#hidSelectedIDs').val(ids);
+    }
+    function togglePhy(chk) {
+        if (chk.checked) {
+            var phy = [];
+            $('.phycheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = '';
+                phy.push(this.value);
+            });
+            $('#hidPhysicians').val("");
+            $('#chkJustMe').prop('checked', false);
+            //checkboxHiddenUpdate($('#hidPhysicians'), 'phycheck');
+        }
+        else {
+            $('.phycheck').each(function () {
+                this.checked = chk.checked;
+            });
+            $('#chkJustMe').prop('checked', false);
+            $('#hidPhysicians').val("");
+            //checkboxHiddenUpdate($('#hidPhysicians'), 'phycheck');
+        }
+    }
+    function selectPhy() {
+        checkboxHiddenUpdate($('#hidPhysicians'), 'phycheck');
+        $('#chkphyAll').prop('checked', false);
+    }
+    function justMe(chk) {
+        $('#chkphyAll').prop('checked', false);
+        var comp = '@HubSecurity.getLoggedInUserID()';
+        if (chk.checked)
+        {
+            $('.phycheck').each(function () {
+                if ($(this).val() == comp)
+                {
+                    $(this).prop('checked', true);
+                }
+                else {
+                    $(this).prop('checked', false);
+                }
+            });
+        }
+    }
+    //function toggleHosp(chk) {
+    //    if (chk.checked) {
+    //        var hosp = [];
+    //        $('.hospcheck').each(function () {
+    //            this.checked = chk.checked;
+    //            hosp.push(this.value);
+    //        });
+    //        //checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck'); //This is removed because otherwise all hospitals are submitted to the server and the query unnecessarily performs filtering
+    //        $('hidHospitals').val("");
+    //    }
+    //    else {
+    //        $('.hospcheck').each(function () {
+    //            this.checked = chk.checked;
+    //        });
+    //        checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+    //    }
+    //}
+    //function selectHosp() {
+    //    checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+    //}
+    //$('#drpHospital').on("change", function () {
+    //    $('#hidHospitals').val($(this).val());
+    //    triggerSubmit();
+    //});
+    function changeHospital() {
+        $('#hidHospitals').val($('#SelectedHospitals').val());
+        triggerSubmit();
+    }
+    function toggleService(chk) {
+        if (chk.checked) {
+            var serv = [];
+            $('.servcheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = '';
+                serv.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+            $('hidServices').val("");
+        }
+        else {
+            $('.servcheck').each(function () {
+                this.checked = chk.checked;
+            });
+            //checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+            $('hidServices').val("");
+        }
+    }
+    function selectService() {
+        checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+        $('chkservAll').prop('checked', false);
+    }
+    function triggerSubmit() {
+        $('#btnSubmit').click();
+    }
+    function showNotes(btn) {
+        var row = $(btn).parent();
+        var txt = $(row).find('#hidNotes').val();
+        $('#notesView').val(txt);
+        $('#NotesPopupOuter').dialog('open');
+    }
+    function showTally() {
+        $('#TallyPopup').dialog('open');
+    }
+    function closeTally() {
+        $('#TallyPopup').dialog('close');
+    }
+    function closeNotes()
+    {
+        $('#NotesPopupOuter').dialog('close');
+    }
+    function closeFilters()
+    {
+        $('#FiltersPopupOuter').dialog('close');
+    }
+    function closeImport() {
+        $('#ImportPopupOuter').dialog('close');
+    }
+    function showExport() {
+        $('#ExportPopup').dialog('open');
+    }
+    function hideExport() {
+        $('#ExportPopup').dialog('close');
+    }
+    function exportData() {
+        var content = TableToArray($('#patientGrid'));
+        $.ajax({
+            url: '/PatientAssignment/jsonExportData',
+            type: "POST",
+            contentType: 'application/json',
+//            data: { "listData": JSON.stringify(content), "fileType": JSON.stringify($('#exportType').val()) },
+            data: JSON.stringify({ "listData": content, "fileType": $('#exportType').val() }),
+            success: function (response) {
+                alert(response.responseText);
+            },
+            error: function (response) {
+                alert(response.responseText);
+            }
+        });        
+
+    }
+
+</script>
+<div class="AIMSBanner">
+    Patient Assignment
+</div>
+
+<span>
+    @using (Html.BeginForm("Index", "PatientAssignment", FormMethod.Post, new { id = "indexForm", @style = "display: inline;" }))
+    {
+        <button type="button" class="btn btn-primary btn-sm" onclick="$('#ImportPopupOuter').dialog('open');" id="btnFilters">
+            <i class="glyphicon glyphicon-upload"></i> Import Excel
+        </button>
+        @Html.Raw("&nbsp;")
+        
+        <span id="QuickEditSpan" class="btn-group" role="group" style="margin-left: 10px; margin-right: 30px;">
+            <a type="button" class="btn btn-success btn-sm" name="QuickEdit"
+               href="@Url.Action("EditAll", "PatientAssignment")">
+                <span class="glyphicon glyphicon-pencil" aria-hidden="true"></span>
+                <span class="glyphicon glyphicon-list-alt" aria-hidden="true"></span>
+                <span>Edit All</span>
+            </a>
+            <button type="submit" name="CopyButton" class="btn btn-primary btn-sm" style="" value="Copy Selected">
+                <i class="glyphicon glyphicon-copy"></i> Copy Selected
+            </button>
+            <button type="submit" name="DeleteButton" class="btn btn-danger btn-sm" style="" value="Delete Selected">
+                <i class="glyphicon glyphicon-alert"></i> Delete Selected
+            </button>
+        </span>
+
+        @*<input type="hidden" id="hidIDs" name="hidIDs" />*@
+        <input type="hidden" id="hidSelectedIDs" name="hidSelectedIDs" />
+        <input type="hidden" id="hidPhysicians" name="hidPhysicians" value="@Html.Raw(Json.Encode(Model.SelectedPhysicians))" />
+        <input type="hidden" id="hidHospitals" name="hidHospitals" value="@Html.Raw(Json.Encode(Model.SelectedHospitals))" />
+        <input type="hidden" id="hidServices" name="hidServices" value="@Html.Raw(Json.Encode(Model.SelectedServices))" />
+        <input type="hidden" id="SortDirection" name="SortDirection" value="@Model.SortDirection" />
+        <input type="hidden" id="SortColumn" name="SortColumn" value="@Model.SortColumn" />
+        <span style="white-space: nowrap; overflow: hidden;">
+            <strong>From: </strong><input type="text" name="FromDate" id="txtFrom" class="date-picker textdate" value="@Model.FromDate" onchange="javascript:triggerSubmit();" />
+        </span>
+            @Html.Raw("&nbsp;")
+        <span style="white-space: nowrap; overflow: hidden;">
+            <strong>To: </strong><input type="text" name="ToDate" id="txtTo" class="date-picker textdate" value="@Model.ToDate" onchange="javascript:triggerSubmit();" />
+            </span>
+            @Html.Raw("&nbsp;")
+            <input type="submit" name="action:submit" class="btn btn-primary btn-sm" value="Search" id="btnSubmit" style="display: none;" />
+
+
+            <button type="button" class="btn btn-primary btn-sm" onclick="$('#FiltersPopupOuter').dialog('open');" id="btnFilters">
+                Apply Additional Filters <i class="glyphicon glyphicon-filter"></i>
+            </button>
+            @Html.Raw("&nbsp;")
+            <span style="white-space: nowrap; overflow: hidden;">
+                <strong style="margin-left: 10px; margin-right: 5px;">Hospital:</strong>
+                @Html.DropDownListFor(h => h.SelectedHospitals, Model.HospitalList, new { id = "SelectedHospitals", @onchange = "changeHospital()", style = " margin-right: 50px; margin-top: 3px;" })
+                <button type="button" class="btn btn-primary btn-sm" onclick="$('#TallyPopup').dialog('open');" id="btnTally">
+                    <i class="glyphicon glyphicon-th-list"></i> Tally
+                </button>
+            </span>
+            }
+            <button type="button" id="btnExport" name="btnExport" class="btn btn-primary btn-sm" value="Export List" style="display: inline;" onclick="javascript:showExport()">
+                <i class="glyphicon glyphicon-save-file"></i>  Export List
+            </button>
+        </span>
+    <div id="ExportPopup" style="display: none;" >
+        <strong>FileType: </strong>
+        <select id="exportType" name="exportType" style="width: 150px; margin-bottom: 40px;">
+            <option value="excel">Excel</option>
+            <option value="pdf">PDF</option>
+        </select>
+        <div>
+            <span style="white-space: nowrap; margin-left: auto; margin-right: auto;">
+                <button type="button" id="btnExportSubmit" name="btnExportSubmit" class="btn btn-primary btn-sm" value="Export List" style="margin-right: 10px;" onclick="javascript:exportData()">
+                    Export List
+                </button>
+                <button type="button" onclick="javascript:hideExport()">
+                    Cancel
+                </button>
+            </span>
+        </div>
+    </div>
+    <div id="FiltersPopupOuter" style="display: none;">
+        <div><h3><u>Select Physicians</u></h3></div>
+        <span style="width: 600px;">
+            <span class="col-sm-6" style="font-weight: bolder"><u>Select Physicians</u></span>
+            @*<span class="col-sm-4" style="font-weight: bolder"><u>Select Hospitals</u></span>*@
+            <span class="col-sm-6" style="font-weight: bolder"><u>Select ServiceType</u></span>
+                           
+            <span class="col-sm-6" style="height: 250px; overflow-y: auto;">
+                <input type="checkbox" value="ALL" id="chkphyAll" onclick="javascript:togglePhy(this)" /><strong>ALL</strong><br />
+                <input type="checkbox" id="chkJustMe" onclick="javascript:justMe(this)" /><strong>Just Me</strong><br />
+                @{foreach (SelectListItem phy in Model.PhysicianList)
+                    {
+                        <input type="checkbox" class="phycheck" onclick="javascript:selectPhy()" value="@phy.Value" />@phy.Text <br />
+                        }
+                }
+            </span>              
+            <span class="col-sm-6" style="height: 250px; overflow-y: auto;">
+                <input type="checkbox" value="ALL" id="chkservAll" onclick="javascript:toggleService(this)" /><strong>ALL</strong><br />
+                @{foreach (SelectListItem service in Model.ServiceList)
+                    {
+                        <input type="checkbox" class="servcheck" onclick="javascript:selectService()" value="@service.Value" />@service.Text <br />
+                    }
+                }
+            </span>
+        </span>
+        <div>
+            <input type="button" onclick="javascript:closeFilters();" value="Close Popup" style="margin-top: 50px; padding-top: 5px; padding-bottom: 5px;" />
+            <button type="submit" name="applyFilters" class="btn btn-primary btn-sm" style="float: right; margin-top: 50px; padding-top: 5px; padding-bottom: 5px;" onclick="javascript:triggerSubmit();">
+                Apply Filters <i class="glyphicon glyphicon-arrow-right"></i>
+            </button>
+        </div>    
+    </div>
+    <div id="CreatePopup"></div>
+    <div id="TallyPopup" style="display: none; border: 1px solid royalblue;">
+        <table id="TallyTable" class="table table-striped table-bordered" style="min-width: 300px;">
+            <thead class="thead-default" style="background-color: royalblue; color:white; font-weight: bold;"><tr><td>Physician</td><td>Number</td></tr></thead>
+            @{ foreach (var row in Model.ToLookupTally)
+                {
+                    int tally = 0;
+                    for (int i = 0; i < row.Value.Length; i++)
+                    {
+                        tally += 1;
+                    }
+                    <tr><td>@row.Key</td><td align="center">@tally</td></tr>
+                }
+            }
+        </table>
+        <input id="btnCloseTally" type="button" value="Close Popup" onclick="javascript: closeTally();" />
+    </div>
+
+    @Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")@Html.Raw("&nbsp;")
+    @*<a class="btn btn-primary btn-sm" id="CreatePopupButton" style="margin-right: 50px;">
+        <span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span>
+        <span>Create New</span>
+    </a>*@
+    
+
+    <div id="NotesPopupOuter" style="display: none">
+        <div class="boxsizingBorder">
+            <div class="col-md-10" style="text-align: right;"><input type="button" value="Close Popup" onclick="javascript:closeNotes();" /></div>
+            <textarea id="notesView" style="overflow: scroll; margin: 0; padding: 0; width: 800px; height: 600px; border: 1px solid royalblue;"></textarea>
+            <div class="col-md-10" style="text-align: right;">
+                <input type="button" style="float: right;" value="Close Popup" onclick="javascript:closeNotes();" />
+            </div>
+        </div>
+    </div>
+
+    <table id="patientGrid" class="table table-bordered table-striped">
+    <tr>
+        <th><input type="checkbox" id="chkSelectAll" onchange="javascript:toggleAll(this)" /></th>
+        <th style="display: none;">ID</th>
+        <th><a href="#" class="SortLink" data-name="ServiceDate" name="SortLink" id="SortServiceDate">ServiceDate</a><i name="sortArrow"></i></th>
+        <th><a href="#" class="SortLink" data-name="Physician" name="SortLink" id="SortPhysician">Physician</a><i name="sortArrow"></i></th>
+        <th><a href="#" class="SortLink" data-name="Hospital" name="SortLink" id="SortHospital">Hospital</a><i name="sortArrow"></i></th>
+        <th><a href="#" class="SortLink" data-name="PCP_Practice" name="SortLink" id="SortPCP_Practice">PCP_Practice</a><i name="sortArrow"></i></th>
+        <th><a href="#" class="SortLink" data-name="PatientName" name="SortLink" id="SortPatientName">PatientName</a><i name="sortArrow"></i></th>
+        <th><a href="#" class="SortLink" data-name="MRN_FIN" name="SortLink" id="SortMRN_FIN">MRN_FIN</a><i name="sortArrow"></i></th>
+        <th><a href="#" class="SortLink" data-name="RoomNo" name="SortLink" id="SortRoomNo">RoomNo</a><i name="sortArrow"></i></th>
+        <th><a href="#" class="SortLink" data-name="ServiceType" name="SortLink" id="SortServiceType">ServiceType</a><i name="sortArrow"></i></th>
+        <th><a href="#" class="SortLink" data-name="PatientClass" name="SortLink" id="SortPatientClass">PatientClass</a><i name="sortArrow"></i></th>
+    </tr>
+    @foreach (var p in Model.Patients)
+    {
+        <tr>
+            <td>@Html.CheckBox("chkS", false, new { onclick="javascript:updateHiddenIDs()", @class="rowcheck" })</td>
+            <td style="display: none;" data-name="ID">@Html.DisplayFor(model => p.ID)</td>
+            <td data-name="ServiceDate">@Html.DisplayFor(model => p.ServiceDate)</td>
+            <td data-name="Physician">@Html.DisplayFor(model => p.Physician)</td>
+            <td data-name="Hospital">@Html.DisplayFor(model => p.Hospital)</td>
+            <td data-name="PCP_Practice">@Html.DisplayFor(model => p.PCP_Practice)</td>
+            <td data-name="PatientName">@Html.ActionLink(p.PatientName.ToString(), "PatientSort", "PatientLog", new { patientName = p.PatientName }, null)</td>
+            <td data-name="MRN_FIN">@Html.DisplayFor(model => p.MRN_FIN)</td>
+            <td data-name="RoomNo">@Html.DisplayFor(model => p.RoomNo)</td>
+            <td data-name="ServiceType">@Html.DisplayFor(model => p.ServiceType)</td>
+            <td data-name="PatientClass">@Html.DisplayFor(model => p.PatientClass)</td>
+        </tr>
+    }
+</table>
+
+<div id="ImportPopupOuter" style="display: none;">
+        <div id="ImportHeader"><h3>Please select a file to import.</h3></div>
+        <input type="file" id="ImportFileName" name="file" class="fileimport" style="width: 500px;" />
+        <div id="resultView" style="max-height: 200px; overflow-y: auto; border: 1px solid royalblue;"></div>
+    <label id="chkCopyPreviousDayLabel" style="display: none; margin-top: 20px;" title="Copies all non discharge patients from previous day to today before import."><input type="checkbox" alt="Copies all non discharge patients from previous day to today before import." title="Copies all non discharge patients from previous day to today before import." id="chkCopyPreviousDay" style="display: none;" value="Copy From Previous Day" />Copy From Previous Day</label>
+    <div><label id="chkSourceListFinalLabel" style="display: none;" title="Remove all patients from today not on this import list."><input type="checkbox" alt="Removes all patients from today not on the imported list" title="Removes all patients from today not on the imported list" id="chkSourceListFinal" style="display: none;" value="Remove all patients from today not on imported list" />Remove all patients from today not on imported list</label></div>
+    <div><ul class="list-inline" id="columnSpan" ></ul></div>
+
+        <div class="col-sm-12" style="margin-top: 50px;">
+            <div class="col-sm-6">
+                <input type="button" value="Close Popup" style="padding: 3px;" onclick="javascript:closeImport();" />
+            </div>
+            <div class="col-sm-6">
+                <button type="button" class="btn btn-primary btn-sm" id="btnImportFile" name="buttonImportFile">
+                    Import Excel <i class="glyphicon glyphicon-cloud-upload"></i>
+                </button>
+                <button type="button" class="btn btn-success btn-sm" id="btnCommitChanges" name="buttonCommitChanges" style="display: none;">
+                    Commit Changes <i class="glyphicon glyphicon-save-file"></i>
+                </button>
+            </div>
+        </div>
+</div>
+<div style="display: none;">
+    <li class="dupDrop">
+        <div class="innerColumnName"></div>
+        @Html.DropDownListFor(d => d.ImportColumns, Model.ImportColumns, "None")
+    </li>
+</div>
+
+
+
+
+

@@ -1,0 +1,137 @@
+﻿@using AimsHub.Security;
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewBag.Title - Aims Hub</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    @*@Scripts.Render("~/bundles/jquery")*@
+    @Scripts.Render("~/bundles/aimsdefault")
+    <style type="text/css">
+        .w3-bar .w3-button {
+            padding: 16px;
+        }
+        .spacer {
+            height: 52px;
+            width: 100%;
+        }
+        .w3-ul a {
+            text-decoration: none;
+        }
+        .w3-ul li:hover {
+            background-color: royalblue;
+            color: white;
+        }
+        .w3-ul li:hover a {
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar (sit on top) -->
+    <a href="@Url.Action("Index", "Home")" style="display: inline; position: fixed; z-index: 2; background-color: royalblue;">
+        <img id="AIMSLogoNav" src="~/Images/AIMS_Logo.jpg" class="img-rounded" style="width: 205px; height: 75px; margin-left: 5px; margin-right: auto; margin-top: 3px;" />
+    </a>
+    <div class="w3-top">
+        <div class="w3-bar w3-card-2" id="myNavbar">
+            @*<a href="#home" class="w3-bar-item w3-button w3-wide">LOGO</a>*@
+
+            <!-- Right-sided navbar links -->
+            <div class="w3-hide-small" style="margin-left: 250px;">
+                @if (HubSecurity.isAdmin || HubSecurity.isSiteLeader || HubSecurity.isPhysician)
+                {
+                    <a href="@Url.Action("Index", "PatientLog")" data-popup="navPatientPopup" id="patientmodule" name="barButtonDrop" class="w3-bar-item w3-button">Patients</a>
+                }
+                <a href="@Url.Action("Index", "Reports")" data-popup="navReportPopup" id="reportmodule" name="barButtonDrop" class="w3-bar-item w3-button">Reports</a>
+                @if (HubSecurity.isAdmin || HubSecurity.isBilling)
+                {
+                    <a href="@Url.Action("Index", "Billing")" data-popup="navBillingPopup" id="billingmodule" name="barButtonDrop" class="w3-bar-item w3-button"><i class="fa fa-user"></i> Billing</a>
+                }
+                <a href="@Url.Action("DisplayArea", "Schedule")" id="schedulemodule" name="barButton" class="w3-bar-item w3-button"><i class="fa fa-user"></i> Schedule</a>
+                @if (HubSecurity.isAdmin)
+                {
+                    <a href="#referringpracticemodule" name="barButton" class="w3-bar-item w3-button"><i class="fa fa-th"></i> Manage Practices</a>
+                }
+                @if (HubSecurity.isAdmin || HubSecurity.isSiteLeader)
+                {
+                    <a href="#managephysiciansmodule" name="barButton" class="w3-bar-item w3-button"><i class="fa fa-usd"></i> Manage Physicians</a>
+                }
+                @if (HubSecurity.isAdmin)
+                {
+                    <a href="@Url.Action("Index", "Admin")" class="w3-bar-item w3-button"><i class="fa fa-envelope"></i> Admin</a>
+                }
+            </div>
+            <div class="w3-right w3-hide-small">
+                <a href="@Url.Action("Change","Login")" type="text/html" class="navbar-text" style="text-decoration: underline;">Change Password</a>
+                <a type="button" class="btn btn-warning btn-xs navbar-text img-rounded" href="@Url.Action("Logoff","Login")"
+                   style="background-color: red; color: white; font-size: small; font-weight: bold; margin-left:20px;"
+                   id="logoutButton">Log Out</a>
+            </div>
+            <!-- Hide right-floated links on small screens and replace them with a menu icon -->
+
+            <a href="javascript:void(0)" class="w3-bar-item w3-button w3-right w3-hide-large w3-hide-medium" onclick="w3_open()">
+                <i class="fa fa-bars"></i>
+            </a>
+        </div>
+    </div>
+
+    <div id="navPatientPopup" style="display: none;" name="navPopup">
+        <ul class="w3-ul">
+            <li id="patientLog"><strong>@Html.ActionLink("My Patients", "Index", "PatientLog")</strong></li>
+            @if (HubSecurity.isAdmin || HubSecurity.isSiteLeader)
+            {
+                <li id="patientAss">@Html.ActionLink("Patient Assignment", "Index", "PatientAssignment")</li>
+            }
+            <li id="patientCom">@Html.ActionLink("Manage Communications", "Index", "PCPCommunication")</li>
+        </ul>
+    </div>
+    <div id="navBillingPopup" style="display: none;" name="navPopup">
+        <ul class="w3-ul">
+            <li id="billingmain"><strong>@Html.ActionLink("Billing Main", "Index", "Billing")</strong></li>
+            <li id="billingcorrection">@Html.ActionLink("Billing Correction", "Correction", "Billing")</li>
+            <li id="billingpurge">@Html.ActionLink("Billing Purge", "Purge", "Billing")</li>
+        </ul>
+    </div>
+    <div id="navReportPopup" style="display: none;" name="navPopup">
+        <ul class="w3-ul">
+            <li id="reportmain"><strong>@Html.ActionLink("Reports Index", "Index", "Reports")</strong></li>
+            <li id="reportmissingpcpcomm">@Html.ActionLink("Missing PCP Communications", "MissingPCPComm", "Reports")</li>
+            <li id="reportfaxactivity">@Html.ActionLink("Fax Activity", "FaxActivity", "Reports")</li>
+            <li id="reportemailactivity">@Html.ActionLink("Email Activity", "EmailActivity", "Reports")</li>
+            @*<li id="reportpcpusers">@Html.ActionLink("PCP Users", "PCPUsers", "Reports")</li>
+            <li id="reportpcpdetails">@Html.ActionLink("PCP Details", "PCPDetails", "Reports")</li> Revisit these reports, stupid*@
+            <li id="reportassignedstatus">@Html.ActionLink("Assigned Status", "AssignedStatus", "Reports")</li>
+            <li id="reportbilling">@Html.ActionLink("Billing", "Billing", "Reports")</li>
+            <li id="reportcensus">@Html.ActionLink("Census", "Census", "Reports")</li>
+            <li id="reportpcpgroups">@Html.ActionLink("PCP Groups", "PCPGroups", "Reports")</li>
+            <li id="reportphysicianencounters">@Html.ActionLink("Physician Encounters", "PhysicianEncounters", "Reports")</li>
+        </ul>
+    </div>
+    <!--MOBILE SECTION / NOT IMPLEMENTED AT THE MOMENT-->
+    <!-- Sidebar on small screens when clicking the menu icon -->
+    @*<nav class="w3-sidebar w3-bar-block w3-black w3-card-2 w3-animate-left w3-hide-medium w3-hide-large" style="display:none" id="mySidebar">
+            <a href="javascript:void(0)" onclick="w3_close()" class="w3-bar-item w3-button w3-large w3-padding-16">Close ×</a>
+            <a href="#patientmodule" onclick="w3_close()" class="w3-bar-item w3-button">ABOUT</a>
+            <a href="#billingmodule" onclick="w3_close()" class="w3-bar-item w3-button">TEAM</a>
+            <a href="#referringpracticemodule" onclick="w3_close()" class="w3-bar-item w3-button">WORK</a>
+            <a href="#managephysiciansmodule" onclick="w3_close()" class="w3-bar-item w3-button">PRICING</a>
+            <a href="#adminmodule" onclick="w3_close()" class="w3-bar-item w3-button">CONTACT</a>
+        </nav>*@
+    <div class="spacer"></div>
+
+    <div style="width: 95%; margin-left: auto; margin-right: auto;">
+        @RenderBody()
+        <hr />
+        <footer>
+            <div>
+                <h5 style="margin-top: 10px;">&copy; 2017 - Emcomps</h5>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

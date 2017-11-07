@@ -1,0 +1,52 @@
+﻿@model ScheduleLegendViewModel
+@using AimsHub.ViewModels
+@using AimsHub.Models
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Legend</title>
+</head>
+<body>
+    <button type="button" onclick="javascript:window.close()">Close</button>
+    <table class="table table-bordered table-striped">
+        <tr>
+            <th>
+                Event
+            </th>
+            <th>
+                Description
+            </th>
+            <th>
+                Back Color
+            </th>
+            <th>
+                Font Color
+            </th>
+        </tr>
+        @foreach (ScheduleType type in Model.types)
+        {
+            <tr>
+                <td>
+                    @type.Event
+                </td>
+                <td>
+                    @type.Description
+                </td>
+                <td style="background-color: @type.BackColor">
+
+                </td>
+                <td style="background-color: @type.ForeColor">
+
+                </td>
+            </tr>
+        }
+    </table>
+    <button type="button" onclick="javascript:window.close()">Close</button>
+</body>
+</html>

@@ -1,0 +1,376 @@
+﻿@model ScheduleEditViewModel
+@using AimsHub.ViewModels
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+
+<script src="~/Scripts/jquery-3.2.1.min.js"></script>
+<script src="~/Scripts/jquery-ui.min.js"></script>
+@*<script src="~/Scripts/AIMScommon.js"></script>*@
+<script src="~/Scripts/date.js"></script>
+<link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+<link href="~/Content/jquery-ui.min.css" rel="stylesheet" />
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<script type="text/javascript">
+    function close() {
+        parent.DayPilot.ModalStatic.close();
+    }
+
+    function formSubmit(e)
+    {
+        var f = $("#f");
+        $.post(f.action, f.serialize(), function (result) {
+            //close(eval(result));
+            if (result == "success")
+            {
+                close();
+            }
+            else {
+                alert('Something went wrong.. please notify IT');
+            }
+            
+        });
+        return false;
+    }
+
+    $(document).ready(function () {
+        $('.date-picker').datepicker();
+
+        if ($('#RepeatType').val() == "Weekly")
+        {
+            //$('[name=chkDay]').change(setDays());
+            //Show day row
+            $('.Weekly').css('display', 'inherit');
+
+            //Check appropriate days
+            var days = '@Model.Days'.split(':');
+            for (i = 0; i < days.length; i++)
+            {
+                switch (days[i])
+                {
+                    case "Sun":
+                        $('#chkSunday').prop('checked', true);
+                        break;
+                    case "Mon":
+                        $('#chkMonday').prop('checked', true);
+                        break;
+                    case "Tue":
+                        $('#chkTuesday').prop('checked', true);
+                        break;
+                    case "Wed":
+                        $('#chkWednesday').prop('checked', true);
+                        break;
+                    case "Thu":
+                        $('#chkThursday').prop('checked', true);
+                        break;
+                    case "Fri":
+                        $('#chkFriday').prop('checked', true);
+                        break;
+                    case "Sat":
+                        $('#chkS').prop('checked', true);
+                        break;
+                }
+            }
+        }
+    });
+    function deleteRecord() {
+        if (confirm('Are you sure you wish to delete this schedule event?'))
+        {
+            $('#forDelete').val('yes');
+            var f = $("#f");
+            $.post(f.action, f.serialize(), function (result) {
+                if (result == "success") {
+                    close();
+                }
+                else {
+                    alert('Something went wrong.. please notify IT');
+                }
+
+            });
+            return false;
+        }
+        else {
+
+        }
+    }
+    function updateTitle()
+    {
+        var title;
+        var theType = $('#DefaultType').val();
+        theType = theType.substring(theType.indexOf("(") + 1, theType.indexOf(")"));
+        title = $('#DefaultHospital').val() + "-" + theType + "-" + $('#DefaultUser').val().substring(1);
+        $('#txtTitle').val(title);
+    }
+    function validateDate()
+    {
+        var start = Date.parse($('#txtStartDate').val());
+        var end = Date.parse($('#txtEndDate').val());
+
+        //if (Date.compare()
+        //{
+        //    denySubmit(true, $('#txtEndDate'));
+        //}
+        //Check hours if day is same,
+
+
+    }
+    function denySubmit(deniedbro, error)
+    {
+        if (deniedbro == true)
+        {
+            $(error).css('background-color', 'red');
+            $('#btnUpdate').attr('disabled', 'disabled');
+        }
+        else {
+            $(error).css('background-color', '');
+            $('#btnUpdate').attr('disabled', '');
+        }
+    }
+    function checkRepeat()
+    {
+        if ($('#RepeatType').val() == "Weekly")
+        {
+            $('.Weekly').css('display', 'inherit');
+            $('#intervaltext').text('Week(s)');
+        }
+        else if ($('#RepeatType').val() == "Daily") {
+            $('.Weekly').css('display', 'none');
+            $('#intervaltext').text('Day(s)');
+        }
+        else {
+            $('.Weekly').css('display', 'none');
+        }
+
+    }
+    function showRepeat()
+    {
+        $('#repeat').css('display', 'inherit');
+    }
+    function hideRepeat()
+    {
+        $('#repeat').css('display', 'none');
+    }
+    function thisOnly()
+    {
+        hideRepeat();
+    }
+    function wholeSeries()
+    {
+        showRepeat();
+    }
+    function setDays()
+    {
+        var daystring = '';
+        $('[name=chkDay]').each(function () {
+            if ($(this).is(":checked")) {
+                daystring += $(this).val() + ':';
+            }
+        });
+        $('#Days').val(daystring.substring(0, daystring.length - 1));
+    }
+</script>
+<style type="text/css">
+    label {
+        margin-right: 15px;
+    }
+    td {
+        padding: 2px;
+    }
+    input[name="Title"] {
+        min-width: 150px;
+    }
+    input[name="StartDateString"] {
+        max-width: 120px;
+    }
+    select {
+        min-width: 200px;
+    }
+    .mini {
+        min-width: 50px;
+    }
+    textarea {
+        min-width: 300px;
+        min-height: 80px;
+    }
+</style>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Edit</title>
+</head>
+<body>
+@*@using (Html.BeginForm("Edit", "Schedule", FormMethod.Post, new { id = "f" }))
+{*@
+    @*<input type="hidden" value="@Model.Complete" />*@
+    <form id="f" action="/Schedule/Edit" method="post" onsubmit="return false;">
+    <input type="hidden" id="ID" name="ID" value="@Request.QueryString["id"]" />
+        <input type="hidden" id="RepeatFirstID" name="RepeatFirstID" value="@Model.RepeatFirstID" />
+        <input type="hidden" id="forDelete" name="forDelete" value="" />
+        <div class="col-lg-12">
+            <div class="col-lg-offset-2">
+                <h2>Edit Schedule</h2>
+            </div>
+        </div>
+        <table style="margin-left: auto; margin-right: auto;">
+            <tr>
+                <td align="right">
+                    <label>User: </label> 
+                </td>
+                <td>
+                    @Html.DropDownListFor(model => model.DefaultUser, Model.Users, null, new { @width = "100%", onchange="javascript:updateTitle()" })
+                </td>
+            </tr>
+
+            <tr>
+                <td align="right">
+                    <label>Hospital: </label>
+                </td>
+                <td align="left">
+                    @Html.DropDownListFor(model => model.DefaultHospital, Model.Hospitals, null, new { onchange = "javascript:updateTitle()" })
+                </td>
+            </tr>
+
+            <tr>
+                <td align="right">
+                    <label>Type: </label>
+                </td>
+                <td align="left">
+                    @Html.DropDownListFor(model => model.DefaultType, Model.Types, null, new { onchange = "javascript:updateTitle()" }) 
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>Start: </label>
+                </td>
+                <td align="left">
+                    @Html.TextBox("txtStartDate", Model.StartDate.ToShortDateString(), new { @class = "date-picker", onchange="javascript:validateDate()" }) @Html.DropDownListFor(model => model.StartHour, Model.Hours, null, new { @class = "mini" }) @Html.DropDownListFor(model => model.StartMinute, Model.Minutes, null, new { @class = "mini" })
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>End: </label>
+                </td>
+                <td align="left">
+                    @Html.TextBox("txtEndDate", Model.EndDate.ToShortDateString(), new { @class = "date-picker", onchange = "javascript:validateDate()" }) @Html.DropDownListFor(model => model.EndHour, Model.Hours, null, new { @class = "mini" }) @Html.DropDownListFor(model => model.EndMinute, Model.Minutes, null, new { @class = "mini" })
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>Title: </label>
+                </td>
+                <td align="left">
+                    @Html.TextBoxFor(model => model.Title, new { @id = "txtTitle", @name = "txtTitle" })
+                </td>
+            </tr>
+            <tr>
+                <td align="right">
+                    <label>Comments: </label>
+                </td>
+                <td align="left">
+                    @Html.TextAreaFor(model => model.Comments, new { @id = "txtComments", @name = "txtComments", @width = "400px", @height = "300px" })
+                </td>
+            </tr>
+        </table>
+        <hr />
+        @Html.HiddenFor(model => model.Days)
+        @if (Model.ShowRepeat)
+        {
+            <div class="col-lg-12">
+                <span style="white-space: nowrap; overflow: hidden">
+                    <label>Edit Applicable To: </label>
+                    @*<label style="font-weight: normal"><input type="radio" id="radioThisOnly" name="radioThisOnly" class="radButton" value="This Schedule Only" onclick="javascript:thisOnly()" />This Schedule Only</label>
+                    <label style="font-weight: normal"><input type="radio" id="radioWholeSeries" name="radioWholeSeries" value="Whole Series" onclick="javascript:wholeSeries()" />Whole Series</label>*@
+                    <label>@Html.RadioButtonFor(model => model.RepeatScope, "ThisOnly", new { value = "ThisOnly", onclick="javascript:thisOnly()" }) This Schedule Only</label>
+                    <label>@Html.RadioButtonFor(model => model.RepeatScope, "WholeSeries", new { value = "WholeSeries", onclick = "javascript:wholeSeries()", @checked="checked" }) Whole Series</label>
+                </span>
+            </div>
+            <div id="repeat">
+                <div class="col-lg-12">
+                    <span style="white-space: nowrap; overflow: hidden">
+                        <label>Repeat: </label>
+                        <span class="col-lg-offset-7">@Html.TextBoxFor(model => model.RepeatType, new { style="font-weight: boldest; margin-left: 40px;", @readonly="readonly" } )@*@Html.DropDownListFor(model => model.RepeatType, Model.Repeat, null, new { onchange = "javascript:checkRepeat()", style="margin-left: 42px; max-width: 100px;" })*@</span>
+                    </span>
+                </div>
+                <div class="col-lg-12">
+                    <span style="white-space: nowrap; overflow: hidden">
+                        <label>Repeat Every: </label>
+                        @Html.TextBoxFor(model => model.RepeatInterval, new { style="max-width: 40px;" }) <span id="intervaltext">Day(s)</span>
+                    </span>
+                </div>
+                <div class="col-lg-12 Weekly" style="display: none;">
+                    <span style="max-width: 400px;">
+                        <label>On Days: </label>
+                        <span>
+                            <label class="repeatWeekly" style="white-space: nowrap;">
+                                <input type="checkbox" id="chkSunday" name="chkDay" onchange="javascript:setDays()" value="Sun" style="width: 25px;" />
+                                Sun
+                            </label>
+
+                            <label class="repeatWeekly" style="white-space: nowrap;">
+                                <input type="checkbox" id="chkMonday" name="chkDay" onchange="javascript:setDays()" value="Mon" style="width: 25px;" />
+                                Mon
+                            </label>
+
+                            <label class="repeatWeekly" style="white-space: nowrap;">
+                                <input type="checkbox" id="chkTuesday" name="chkDay" onchange="javascript:setDays()" value="Tue" style="width: 25px;" />
+                                Tue
+                            </label>
+
+                            <label class="repeatWeekly" style="white-space: nowrap;">
+                                <input type="checkbox" id="chkWednesday" name="chkDay" onchange="javascript:setDays()" value="Wed" style="width: 25px;" />
+                                Wed
+                            </label>
+
+                            <label class="repeatWeekly" style="white-space: nowrap;">
+                                <input type="checkbox" id="chkThursday" name="chkDay" onchange="javascript:setDays()" value="Thu" style="width: 25px;" />
+                                Thu
+                            </label>
+
+                            <label class="repeatWeekly" style="white-space: nowrap; margin-left: 80px;">
+                                <input type="checkbox" id="chkFriday" name="chkDay" onchange="javascript:setDays()" value="Fri" style="width: 25px;" />
+                                Fri
+                            </label>
+
+                            <label class="repeatWeekly" style="white-space: nowrap;">
+                                <input type="checkbox" id="chkSaturday" name="chkDay" onchange="javascript:setDays()" value="Sat" style="width: 25px;" />
+                                Sat
+                            </label>
+                        </span>
+                    </span>
+                </div>
+                <div class="col-lg-12">
+                    <span style="white-space: nowrap; overflow: hidden">
+                        <label>Repeat Until: </label>
+                        @Html.TextBox("txtRepeatDate", Model.RepeatUntilDate.ToShortDateString(), new { @class = "date-picker" })
+                        @Html.DropDownListFor(model => model.RepeatHour, Model.Hours, null, new { @class = "mini" })
+                        @Html.DropDownListFor(model => model.RepeatMinute, Model.Minutes, null, new { @class = "mini" })
+                    </span>
+                </div>
+            </div>
+        }
+        else
+        {
+        @Html.DropDownListFor(model => model.RepeatType, Model.Repeat, null, new { style="display:none;" })
+    }
+        <div style="margin-left: auto; margin-right: auto; text-align: center; margin-bottom: 20px;">
+            <span class="btn-group">
+                <button type="submit" id="btnUpdate" name="btnUpdate" value="Update" onclick="javascript:formSubmit(this)">Update</button>
+                @if (Model.ShowRepeat)
+                {
+                    <button type="button" id="btnDelete" name="btnDelete" value="Delete" onclick="javascript:deleteRecord()">Delete All</button>
+                }
+                else
+                {
+                    <button type="button" id="btnDelete" name="btnDelete" value="Delete" onclick="javascript:deleteRecord()">Delete</button>
+                }                
+                <button type="button" id="btnCancel" name="btnCancel" value="Cancel" onclick="parent.DayPilot.ModalStatic.close()">Cancel</button>
+            </span>
+        </div>       
+    </form>
+@*}*@
+</body>
+</html>

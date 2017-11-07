@@ -1,0 +1,6 @@
+﻿@model AimsHub.Models.SmallButtonModel
+
+<a type="button" id="@Model.Id" class="btn @Model.ButtonType btn-sm" href="@Url.Action(Model.Action)@Model.ActionParameters" name="@Model.Name" title="@Model.ToolTip">
+<span class="glyphicon glyphicon-@Model.Glyph" aria-hidden="true"></span>
+<span>@Model.Text</span>
+</a>

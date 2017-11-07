@@ -1,0 +1,72 @@
+﻿@model PracticeAdminSupportViewModel
+@using AimsHub.ViewModels
+
+@{
+    ViewBag.Title = "Support";
+    Layout = "~/Views/Shared/_LayoutPCP.cshtml";
+}
+<style type="text/css">
+    .col-lg-12 {
+        padding: 10px;
+    }
+    label {
+        font-size: 12px;
+    }
+</style>
+<script type="text/javascript">
+    $(document).ready(function () {
+        if ($('#MessageSent').val() == true)
+        {
+            $('#supportForm').css('display', 'none');
+            $('#successForm').css('display', 'inherit');
+        }
+    });
+    function clearForm() {
+        $('#Subject').val('');
+        $('#Body').val('');
+        $('#ReturnEmail').val('');
+        $('#ErrorMessage').val('');
+        $('#Reason').val('').change();
+    }
+</script>
+
+@using (Html.BeginForm("Support", "PracticeAdmin", FormMethod.Post, new { @style = "margin-top: 60px;" }))
+{
+    @Html.HiddenFor(model => model.MessageSent)
+    <div id="supportForm">
+        <label style="display: none;">@Html.DisplayFor(model => model.ErrorMessage)</label>
+        <div class="col-lg-12">
+            <div style="margin-left: auto; margin-right: auto; text-align: center"><h2>Are you having issues with the Aims Hub? Just have a question? Let us know!</h2></div>
+        </div>
+        <div class="col-lg-12" style="margin-top: 50px;">
+            <div class="col-lg-1 col-lg-offset-3">
+                <label>Subject: </label>
+            </div>
+            @Html.TextBoxFor(model => model.Subject)
+        </div>
+        <div class="col-lg-12">
+            <div class="col-lg-1 col-lg-offset-3"><label>Reason: </label></div>
+            @Html.DropDownListFor(model => model.Reason, Model.Reasons, new { style="width: 175px;" })
+        </div>
+        <div class="col-lg-12">
+            <div class="col-lg-1 col-lg-offset-3"><label>Your Email: </label></div>
+            @Html.TextBoxFor(model => model.ReturnEmail)<span style="font-size: 15px; color: red;">&nbsp; @Model.ErrorMessage</span>
+        </div>
+        <div class="col-lg-12">
+            <div class="col-lg-1 col-lg-offset-3"><label>Message: </label></div>
+            @Html.TextAreaFor(model => model.Body, new { style="width: 500px; height: 200px;" })
+        </div>
+        <div class="col-lg-12 col-lg-offset-4">
+            <div class="col-lg-3">
+                <input class="btn" type="button" value="Clear Form" onclick="javascript:clearForm()" />
+            </div>
+            <div class="col-lg-3">
+                <input type="submit" value="Submit Form" class="btn btn-success" />
+            </div>
+        </div>
+    </div>
+    <div id="successForm" style="margin-left: auto; margin-right: auto; text-align: center; display: none;">
+        <i class="glyphicon glyphicon-check" style="color: green; font-size: 100px;"></i><h2>Your message has been successfully sent!</h2>
+    </div>
+}
+

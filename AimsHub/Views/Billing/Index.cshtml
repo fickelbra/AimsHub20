@@ -1,0 +1,608 @@
+﻿@model BillingIndexViewModel
+@using AimsHub.ViewModels;
+@using AimsHub.Models;
+@using GridMvc.Html;
+@using AimsHub.Security;
+
+@{
+    ViewBag.Title = "Billing";
+    int totalPhy = Model.PhysicianList.Count();
+    int totalHosp = Model.HospitalList.Count();
+    int totalServ = Model.ServiceList.Count();
+    int totalLast = Model.LastNameFilterList.Count();
+}
+
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+@*<script src="~/Scripts/gridmvc.js"></script>
+<link href="~/Content/Gridmvc.css" rel="stylesheet" />*@
+<script type='text/javascript'>
+    function updateNotesCompleted() {
+        $('#hidNotesCompleted').val($('#SelectedNotesCompleted').val());
+    }
+    function updateNotesCopied() {
+        $('#hidNotesCopied').val($('#SelectedNotesCopied').val());
+    }
+    function updateFaceSheetEntered() {
+        $('#hidFaceSheetEntered').val($('#SelectedFaceSheetEntered').val());
+    }
+    function updateCodingCompleted() {
+        $('#hidCodingCompleted').val($('#SelectedCodingCompleted').val());
+    }
+    function updateChargePosted() {
+        $('#hidChargePosted').val($('#SelectedChargePosted').val());
+    }
+    $(document).ready(function () {
+        $('body').bind('click', function (e) {
+            if (!$(e.target).is('.ui-dialog, li') && !$(e.target).closest('.ui-dialog').length && !$(e.target).is('[name=txtpopup]')) {
+                $('[name=NonModalPopup]').each(function () {
+                    if ($(this).dialog('isOpen')) {
+                        $(this).dialog('close');
+                    }
+                });
+            }
+        }
+        );
+
+        //Set sort graphic
+        var col = $('#SortColumn').val();
+        var dir = $('#SortDirection').val();
+        var lnk = $('#Sort' + col);
+        var header = lnk.parent();
+        if (dir.indexOf('A') != -1) {
+            $(header).find('[name=sortArrow]').addClass('glyphicon glyphicon-triangle-bottom');
+        }
+        else {
+            $(header).find('[name=sortArrow]').addClass('glyphicon glyphicon-triangle-top');
+        }
+        //$('select option:contains("Yes")').css("color", "green");
+        //$('select option:contains("No")').css("color", "red");
+        //$('select option').css("font-weight", "bolder");
+
+        //$('.filterSelect').change(function () {
+        //    if ($(this).find('option:selected').text() == "ALL") {
+        //        $(this).css("color", "black");
+        //        $(this).css("font-weight", "bolder");
+        //    }
+        //    else if ($(this).find('option:selected').text() == "Yes") {
+        //        $(this).css("color", "green");
+        //        $(this).css("font-weight", "bolder");
+        //    }
+        //    else if ($(this).find('option:selected').text() == "No") {
+        //        $(this).css("color", "red");
+        //        $(this).css("font-weight", "bolder");
+        //    }
+        //});
+
+        $('[name=selectNotesCompleted]').change(function () {
+            $('#hidNotesCompleted').val($(this).val());
+        });
+        $('[name=selectNotesCopied]').change(function () {
+            $('#hidNotesCopied').val($(this).val());
+        });
+        $('[name=selectFaceSheetEntered]').change(function () {
+            $('#hidFaceSheetEntered').val($(this).val());
+        });
+        $('[name=selectCodingCompleted]').change(function () {
+            $('#hidCodingCompleted').val($(this).val());
+        });
+        $('[name=selectChargePosted]').change(function () {
+            $('#hidChargePosted').val($(this).val());
+        });
+
+        //$("#FiltersPopupOuter").dialog({
+        //    autoOpen: false,
+        //    show: 'explode',
+        //    resizable: true,
+        //    draggable: true,
+        //    title: "Set Additional Filters",
+        //    height: 'auto',
+        //    width: '900px',
+        //    modal: true,
+        //    position: { my: "top", at: "bottom", of: $('#btnFilters')}
+        //});
+        $('#PhysiciansPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Service Types",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            dialogClass: "noTitleBar",
+            position: { my: "top", at: "bottom", of: $('#txtPhysician') }
+        });
+        $('#HospitalsPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Hospitals",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            dialogClass: "noTitleBar",
+            position: { my: "top", at: "bottom", of: $('#txtHospitals') }
+        });
+        $('#ServiceTypesPopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Service Types",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            dialogClass: "noTitleBar",
+            position: { my: "top", at: "bottom", of: $('#txtServiceTypes') }
+        });
+        $('#LastNamePopup').dialog({
+            autoOpen: false,
+            resizable: false,
+            draggable: true,
+            title: "Service Types",
+            height: 'auto',
+            width: 'auto',
+            modal: false,
+            dialogClass: "noTitleBar",
+            position: { my: "top", at: "bottom", of: $('#txtLastName') }
+        });
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedPhysicians));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.phycheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var phymax = @totalPhy; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == phymax || max == 0) {
+            $('#chkphyAll').prop('checked', true);
+        }
+
+        checkboxHiddenUpdate($('#hidPhysicians'), 'phycheck');
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedHospitals));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.hospcheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var hospmax = @totalHosp; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == hospmax || max == 0) {
+            $('#chkhospAll').prop('checked', true);
+        }
+
+        checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedServices));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.servcheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var servmax = @totalServ; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == servmax || max == 0) {
+            $('#chkservAll').prop('checked', true);
+        }
+
+        checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+
+        var array = @Html.Raw(Json.Encode(Model.SelectedLastNameFilters));
+        var max = 0;
+        for (i = 0; i < array.length; i++)
+        {
+            $('.lastcheck').each(function () {
+                if (array[i] == $(this).val())
+                {
+                    $(this).prop('checked', true);
+                    max++;
+                }
+            });
+        }
+
+        var lastmax = @totalLast; //Literally did this because if I put it in the if statement VS thinks the syntax is wrong and I hate red squigglies
+        if (max == lastmax || max == 0) {
+            $('#chklastnamefiltersAll').prop('checked', true);
+        }
+
+        checkboxHiddenUpdate($('#hidLastNameFilters'), 'lastcheck');
+    });
+    $(window).on('load', function () {
+        $('#SelectedNotesCompleted').attr('defaultValue', @Json.Encode(Model.SelectedNotesCompleted)).trigger('change');
+        $('#SelectedNotesCopied').attr('defaultValue', @Json.Encode(@Model.SelectedNotesCopied)).trigger('change');
+        $('#SelectedFaceSheetEntered').attr('defaultValue', @Json.Encode(@Model.SelectedFaceSheetEntered)).trigger('change');
+        $('#SelectedCodingCompleted').attr('defaultValue', @Json.Encode(@Model.SelectedCodingCompleted)).trigger('change');
+        $('#SelectedChargePosted').attr('defaultValue', @Json.Encode(@Model.SelectedChargePosted)).trigger('change');
+    });
+    function checkboxHiddenUpdate(hid, className) {
+        var data = [];
+        $('.' + className).each(function () {
+            if (this.checked) {
+                data.push(this.value);
+            }
+        });
+        hid.val(data);
+        if (className == "hospcheck") {
+            if (data.length == 0) {
+                $('#txtHospitals').val('ALL');
+            }
+            else {
+                $('#txtHospitals').val(data);
+            }
+        }
+        if (className == "servcheck") {
+            if (data.length == 0) {
+                $('#txtServiceTypes').val('ALL');
+            }
+            else {
+                $('#txtServiceTypes').val(data);
+            }
+        }
+        if (className == "phycheck") {
+            if (data.length == 0) {
+                $('#txtPhysician').val('ALL');
+            }
+            else {
+                $('#txtPhysician').val(data);
+            }
+        }
+        if (className == "lastcheck") {
+            if (data.length == 0) {
+                $('#txtLastName').val('ALL');
+            }
+            else {
+                $('#txtLastName').val(data);
+            }
+        }
+    }
+    function togglePhy(chk) {
+        if (chk.checked) {
+            var phy = [];
+            $('.phycheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = '';
+                phy.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidPhysicians'), 'phycheck');
+            $('#hidPhysicians').val("");
+        }
+        else {
+            $('.phycheck').each(function () {
+                this.checked = chk.checked;
+            });
+            $('#chkJustMe').prop('checked', false);
+            checkboxHiddenUpdate($('#hidPhysicians'), 'phycheck');
+        }
+    }
+    function selectPhy() {
+        checkboxHiddenUpdate($('#hidPhysicians'), 'phycheck');
+    }
+    function toggleHosp(chk) {
+        if (chk.checked) {
+            var hosp = [];
+            $('.hospcheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = '';
+                hosp.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck'); //This is removed because otherwise all hospitals are submitted to the server and the query unnecessarily performs filtering
+            $('#hidHospitals').val("");
+        }
+        else {
+            $('.hospcheck').each(function () {
+                this.checked = chk.checked;
+            });
+            checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+        }
+    }
+    function selectHosp() {
+        checkboxHiddenUpdate($('#hidHospitals'), 'hospcheck');
+    }
+    function toggleService(chk) {
+        if (chk.checked) {
+            var serv = [];
+            $('.servcheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = '';
+                serv.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+            $('#hidServices').val("");
+        }
+        else {
+            $('.servcheck').each(function () {
+                this.checked = chk.checked;
+            });
+            checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+        }
+    }
+    function selectService() {
+        checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+    }
+    function toggleLastNameFilter(chk) {
+        if (chk.checked) {
+            var serv = [];
+            $('.lastcheck').each(function () {
+                //this.checked = chk.checked;
+                this.checked = '';
+                serv.push(this.value);
+            });
+            //checkboxHiddenUpdate($('#hidServices'), 'servcheck');
+            $('#hidLastNameFilters').val("");
+        }
+        else {
+            $('.lastcheck').each(function () {
+                this.checked = chk.checked;
+            });
+            checkboxHiddenUpdate($('#hidLastNameFilters'), 'lastcheck');
+        }
+    }
+    function selectLastNameFilter() {
+        checkboxHiddenUpdate($('#hidLastNameFilters'), 'lastcheck');
+    }
+    function triggerSubmit() {
+        $('[name=submit]').click();
+    }
+    function closeFilters()
+    {
+        if ($('#PhysiciansPopup').dialog('isOpen')) {
+            $('#PhysiciansPopup').dialog('close');
+        }
+        if ($('#HospitalsPopup').dialog('isOpen')) {
+            $('#HospitalsPopup').dialog('close');
+        }
+        if ($('#ServiceTypesPopup').dialog('isOpen')) {
+            $('#ServiceTypesPopup').dialog('close');
+        }
+        if ($('#LastNamePopup').dialog('isOpen')) {
+            $('#LastNamePopup').dialog('close');
+        }       
+    }
+    function showHospitals() {
+        closeFilters();
+        $('#HospitalsPopup').dialog('open');
+    }
+    function showServiceTypes() {
+        closeFilters();
+        $('#ServiceTypesPopup').dialog('open');
+    }
+    function showLastNames() {
+        closeFilters();
+        $('#LastNamePopup').dialog('open');
+    }
+    function showPhysicians() {
+        closeFilters();
+        $('#PhysiciansPopup').dialog('open');
+    }
+
+</script>
+<style type="text/css">
+    strong {
+        font-size: 13px;
+    }
+    select {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+    select::-ms-expand {
+        display: none;
+    }
+</style>
+
+<div class="AIMSBanner">
+    Billing
+</div>
+
+@using (Html.BeginForm("Index", "Billing", FormMethod.Post, new { id = "indexForm" }))
+{
+    <div style="margin-bottom: 10px;">
+        <div class="col-lg-12" style="background-color: lemonchiffon">
+            <div class="col-lg-2">
+                <strong>From: </strong><input type="text" name="FromDate" id="txtFrom" class="date-picker textdate" value="@Model.FromDate" onchange="javascript:triggerSubmit();" />
+            </div>
+            <div class="col-lg-2">
+                <strong>To: </strong><input type="text" name="ToDate" id="txtTo" class="date-picker textdate" value="@Model.ToDate" onchange="javascript:triggerSubmit();" />
+            </div>
+            <div class="col-lg-2">
+                <strong>Hospitals: </strong><input type="text" name="txtpopup" id="txtHospitals" class="textdate" value="" onclick="javascript:showHospitals();" />
+            </div>
+            <div class="col-lg-2">
+                <strong>Type: </strong><input type="text" name="txtpopup" id="txtServiceTypes" class="textdate" value="" onclick="javascript:showServiceTypes();" />
+            </div>
+            <div class="col-lg-2">
+                <strong>Last Name: </strong><input type="text" name="txtpopup" id="txtLastName" class="textdate" value="" onclick="javascript:showLastNames();" />
+            </div>
+            <div class="col-lg-2">
+                <strong>Physician: </strong><input type="text" name="txtpopup" id="txtPhysician" class="textdate" value="" onclick="javascript:showPhysicians();" />
+            </div>
+            @*@Html.Raw("&nbsp;")
+                <button type="button" class="btn btn-primary btn-sm" style="margin-right: 50px;" onclick="$('#FiltersPopupOuter').dialog('open');" id="btnFilters">
+                    Apply Additional Filters <i class="glyphicon glyphicon-filter"></i>
+                </button>
+                @Html.Raw("&nbsp;")
+                <button type="submit" name="submit" class="btn btn-primary btn-sm" value="Search" style="display: none;">
+                    Go <i class="glyphicon glyphicon-arrow-right"></i>
+                </button>*@
+        </div>
+        <div class="col-lg-12" style="background-color: lemonchiffon">
+            <div class="col-lg-2">
+                <strong>Phy Note Completed: </strong>@Html.DropDownListFor(model => model.SelectedNotesCompleted, Model.YesNo, "ALL", new { @class = "form-control drop filterSelect", name = "selectNotesCompleted", @onchange = "updateNotesCompleted()" })
+            </div>
+            <div class="col-lg-2">
+                <strong>Phy Note Copied: </strong>@Html.DropDownListFor(model => model.SelectedNotesCopied, Model.YesNo, "ALL", new { @class = "form-control drop filterSelect", name = "selectNotesCopied", @onchange = "updateNotesCopied()" })
+            </div>
+            <div class="col-lg-2">
+                <strong>Facesheet Entered: </strong>@Html.DropDownListFor(model => model.SelectedFaceSheetEntered, Model.YesNo, "ALL", new { @class = "form-control drop filterSelect", name = "selectFaceSheetEntered", @onchange = "updateFaceSheetEntered()" })
+            </div>
+            <div class="col-lg-2">
+                <strong>Coding Completed: </strong>@Html.DropDownListFor(model => model.SelectedCodingCompleted, Model.YesNo, "ALL", new { @class = "form-control drop filterSelect", name = "selectCodingCompleted", @onchange = "updateCodingCompleted()" })
+            </div>
+            <div class="col-lg-2">
+                <strong>Charge Posted: </strong>@Html.DropDownListFor(model => model.SelectedChargePosted, Model.YesNo, "ALL", new { @class = "form-control drop filterSelect", name = "selectChargePosted", @onchange = "updateChargePosted()" })
+            </div>
+            <div class="col-lg-2">
+                <button type="submit" name="submit" class="btn btn-primary btn-sm" value="Search">
+                    Go <i class="glyphicon glyphicon-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    @*<div id="FiltersPopupOuter" style="display: none; border: 1px solid royalblue;">
+                <span class="col-xs-4" style="font-weight: bolder"><u>Select Physicians</u></span>
+                <span class="col-xs-3" style="font-weight: bolder"><u>Select Hospitals</u></span>
+                <span class="col-xs-3" style="font-weight: bolder"><u>Select ServiceType</u></span>
+                <span class="col-xs-2" style="font-weight: bolder"><u>Last Name Filter</u></span>*@
+    <div id="PhysiciansPopup" name="NonModalPopup" style="display: none">
+        <span class="col-lg-12" style="overflow-y: auto;">
+            <input type="checkbox" value="ALL" id="chkphyAll" onclick="javascript:togglePhy(this)" /><strong>ALL</strong><br />
+            @{foreach (SelectListItem phy in Model.PhysicianList)
+                {
+                    <input type="checkbox" class="phycheck" onclick="javascript:selectPhy()" value="@phy.Value" />@phy.Text <br />
+                }
+            }
+        </span>
+        <input type="button" onclick="javascript:closeFilters();" value="Close Popup" style="margin-top: 50px; padding-top: 5px; padding-bottom: 5px;" />
+    </div>
+    <div id="HospitalsPopup" name="NonModalPopup" style="display: none">
+        <span class="col-lg-12" style="overflow-y: auto;">
+            <input type="checkbox" value="ALL" id="chkhospAll" onclick="javascript:toggleHosp(this)" /><strong>ALL</strong><br />
+            @{foreach (SelectListItem hosp in Model.HospitalList)
+                {
+                    <input type="checkbox" class="hospcheck" onclick="javascript:selectHosp()" value="@hosp.Value" />@hosp.Text <br />
+                }
+            }
+        </span>
+        <input type="button" onclick="javascript:closeFilters();" value="Close Popup" style="margin-top: 50px; padding-top: 5px; padding-bottom: 5px;" />
+    </div>
+    <div id="ServiceTypesPopup" name="NonModalPopup" style="display: none">
+        <span class="col-lg-12" style="overflow-y: auto;">
+            <input type="checkbox" value="ALL" id="chkservAll" onclick="javascript:toggleService(this)" /><strong>ALL</strong><br />
+            @{foreach (SelectListItem service in Model.ServiceList)
+                {
+                    <input type="checkbox" class="servcheck" onclick="javascript:selectService()" value="@service.Value" />@service.Text <br />
+                }
+            }
+        </span>
+        <input type="button" onclick="javascript:closeFilters();" value="Close Popup" style="margin-top: 50px; padding-top: 5px; padding-bottom: 5px;" />
+    </div>
+    <div id="LastNamePopup" name="NonModalPopup" style="display: none">
+        <span class="col-lg-12" style="overflow-y: auto;">
+            <input type="checkbox" value="ALL" id="chklastnamefiltersAll" onclick="javascript:toggleLastNameFilter(this)" /><strong>ALL</strong><br />
+            @{foreach (SelectListItem filter in Model.LastNameFilterList)
+                {
+                    <input type="checkbox" class="lastcheck" onclick="javascript:selectLastNameFilter()" value="@filter.Value" />@filter.Text <br />
+                }
+            }
+        </span>
+        <input type="button" onclick="javascript:closeFilters();" value="Close Popup" style="margin-top: 50px; padding-top: 5px; padding-bottom: 5px;" />
+    </div>
+
+    <input type="hidden" id="hidPhysicians" name="hidPhysicians" value="@Html.Raw(Json.Encode(Model.SelectedPhysicians))" />
+    <input type="hidden" id="hidHospitals" name="hidHospitals" value="@Html.Raw(Json.Encode(Model.SelectedHospitals))" />
+    <input type="hidden" id="hidServices" name="hidServices" value="@Html.Raw(Json.Encode(Model.SelectedServices))" />
+    <input type="hidden" id="hidLastNameFilters" name="hidLastNameFilters" value="@Html.Raw(Json.Encode(Model.SelectedLastNameFilters))" />
+    <input type="hidden" id="hidNotesCompleted" name="hidNotesCompleted" value="@Model.SelectedNotesCompleted" />
+    <input type="hidden" id="hidNotesCopied" name="hidNotesCopied" value="@Model.SelectedNotesCopied" />
+    <input type="hidden" id="hidFaceSheetEntered" name="hidFaceSheetEntered" value="@Model.SelectedFaceSheetEntered" />
+    <input type="hidden" id="hidCodingCompleted" name="hidCodingCompleted" value="@Model.SelectedCodingCompleted" />
+    <input type="hidden" id="hidChargePosted" name="hidChargePosted" value="@Model.SelectedChargePosted" />
+    <input type="hidden" id="SortDirection" name="SortDirection" value="@Model.SortDirection" />
+    <input type="hidden" id="SortColumn" name="SortColumn" value="@Model.SortColumn" />
+
+    <table id="patientGrid" class="table table-bordered table-striped">
+        <tr>
+            <th>Details</th>
+            <th style="display: none;">ID</th>
+            <th style="min-width: 300px;"><a href="#" class="SortLink" data-name="PatientName" name="SortLink" id="SortPatientName">PatientName</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="DOB" name="SortLink" id="SortDOB">DOB</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="MRN_FIN" name="SortLink" id="SortMRN_FIN">MRN</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="Hospital" name="SortLink" id="SortHospital">Hospital</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="ServiceDate" name="SortLink" id="SortServiceDate">ServiceDate</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="ServiceType" name="SortLink" id="SortServiceType">ServiceType</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink NotesCompleted" data-name="NotesCompleted" name="SortLink" id="SortNotesCompleted">Notes Completed</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="NotesCopied" name="SortLink" id="SortNotesCopied">Notes Copied</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="FaceSheetEntered" name="SortLink" id="SortFaceSheetEntered">FaceSheet Entered</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="CodingCompleted" name="SortLink" id="SortCodingCompleted">Coding Completed</a><i name="sortArrow"></i></th>
+            <th><a href="#" class="SortLink" data-name="ChargePosted" name="SortLink" id="SortChargePosted">Charge Posted</a><i name="sortArrow"></i></th>
+        </tr>
+        @foreach (var p in Model.Patients)
+        {
+            <tr>
+                <td>@Html.Partial("_SmallButtonPartial", new SmallButtonModel
+               {
+                   Action = "Detail",
+                   ButtonType = "btn-success",
+                   Glyph = "",
+                   Text = "...",
+                   Id = p.ID,
+               })</td>
+                <td style="display: none;" data-name="ID">@Html.DisplayFor(model => p.ID)</td>
+                <td data-name="PatientName">@Html.DisplayFor(model => p.PatientName)</td>
+                <td data-name="DOB">@Html.DisplayFor(model => p.DOB)</td>
+                <td data-name="MRN_FIN">@Html.DisplayFor(model => p.MRN_FIN)</td>
+                <td data-name="Hospital">@Html.DisplayFor(model => p.Hospital)</td>
+                <td data-name="ServiceDate">@Html.DisplayFor(model => p.ServiceDate)</td>
+                <td data-name="ServiceType">@Html.DisplayFor(model => p.ServiceType)</td>
+                <td style="display: none;" data-name="Physician">@Html.DisplayFor(model => p.Physician)</td>
+                <td style="width: 60px;" data-name="NotesCompleted" class="NotesCompleted">@Html.DisplayFor(model => p.viewNotesCompleted)</td>
+                <td data-name="NotesCopied" class="NotesCopied">@Html.DisplayFor(model => p.viewNotesCopied)</td>
+                <td data-name="FaceSheetEntered" class="FaceSheetEntered">@Html.DisplayFor(model => p.viewFaceSheetEntered)</td>
+                <td data-name="CodingCompleted" class="CodingCompleted">@Html.DisplayFor(model => p.viewCodingCompleted)</td>
+                <td data-name="ChargePosted" class="ChargePosted">@Html.DisplayFor(model => p.viewChargePosted)</td>
+            </tr>
+        }
+    </table>
+    @*<div>
+        @Html.Grid(Model.Patients).Columns(columns =>
+   {
+       columns.Add()
+        .Encoded(false)
+        .Sanitized(false)
+        .SetWidth(90)
+        .Titled("")
+        .RenderValueAs(c => @Html.Partial("_SmallButtonPartial", new SmallButtonModel
+        {
+            Action = "Detail",
+            ButtonType = "btn-success",
+            Glyph = "",
+            Text = "...",
+            Id = c.ID,
+        }));
+       columns.Add(c => c.ID, true).Titled("ID");
+       columns.Add(c => c.PatientName).Titled("Patient Name").Sortable(true);
+       columns.Add(c => c.DOB).Titled("DOB").Sortable(true).RenderValueAs(c => Convert.ToDateTime(c.DOB).ToShortDateString());
+       columns.Add(c => c.MRN_FIN).Titled("MRN").Sortable(true);
+       columns.Add(c => c.Hospital).Titled("Hospital").Sortable(true);
+       columns.Add(c => c.ServiceDate).Titled("ServiceDate").Sortable(true).RenderValueAs(c => Convert.ToDateTime(c.ServiceDate).ToShortDateString());
+       columns.Add(c => c.ServiceType).Titled("ServiceType").Sortable(true);
+       columns.Add(c => c.Physician, true).Titled("Physician").Sortable(true);
+       columns.Add(c => c.viewNotesCompleted).Titled("Notes Done").Sortable(true).SetWidth(60);
+       columns.Add(c => c.viewNotesCopied).Titled("Notes Copied").Sortable(true).SetWidth(60);
+       columns.Add(c => c.viewFaceSheetEntered).Titled("FaceSheet").Sortable(true).SetWidth(60);
+       columns.Add(c => c.viewCodingCompleted).Titled("Coding Done").Sortable(true).SetWidth(60);
+       columns.Add(c => c.viewChargePosted).Titled("Charge Posted").Sortable(true).SetWidth(60);
+   }).Selectable(false).Named("patientGrid")
+    </div>*@
+
+                    }
+

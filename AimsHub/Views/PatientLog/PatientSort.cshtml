@@ -1,0 +1,75 @@
+﻿@model IEnumerable<AimsHub.Models.PatientLog>
+@using AimsHub.Models
+@using GridMvc.Html
+@using AimsHub.Security
+
+
+@{
+    ViewBag.Title = "PatientLog";
+    bool isAdmin = (HubSecurity.isAdmin || HubSecurity.isSiteLeader);
+    var theUser = HubSecurity.getLoggedInUserID();
+
+}
+
+<script type="text/javascript">
+    //At page ready, if user is not admin, hide edit options for all patients that is not theirs
+    @*$(document).ready(function () {
+        if ($('[name=hidAdmin]').val() == false)
+        {
+            $('table tr').each(function () {
+                var test = $('[data-name=Physician]').innerHTML;
+                var user = '@theUser';
+                if (user != test)
+                {
+                    $('[role="group"]').hide();
+                }
+            });
+        }
+    });*@
+</script>
+
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<script src="~/Scripts/gridmvc.min.js"></script>
+<link href="~/Content/Gridmvc.css" rel="stylesheet" />
+<div class="AIMSBanner">
+    @{
+        //try-catch just to stop this from erroring out when testing outside domain
+        try
+        {
+            HttpContext.Current.Session["DisplayName"].ToString();
+        }
+        catch { }
+    } Patients
+</div>
+<span>
+    <p>
+        <a type="button" class="btn btn-danger btn-sm" style="margin-right: 100px;" href="@Url.Action("Index")">
+            <span>Remove Patient Sort</span>
+        </a>
+    </p>
+</span>
+
+<div style="width:98%;">
+    @Html.Grid(Model).Columns(columns =>
+{
+    //columns.Add()
+    //    .Encoded(false)
+    //    .Sanitized(false)
+    //    .SetWidth(110)
+    //    .Titled("Actions")
+    //    .RenderValueAs(c => @Html.Partial("_TableButtonsPartial", new SmallButtonModel { Id = c.ID }));
+    columns.Add(c => c.ID, true).Titled("ID");
+    columns.Add(c => c.Physician).Titled("AIMS Physician");
+    columns.Add(c => c.ServiceDate).Titled("ServiceDate").Format("{0:MM/dd/yyyy}");
+    columns.Add(c => c.Hospital).Titled("Hospital");
+    columns.Add(c => c.PCP_Practice).Titled("PCP");
+    columns.Add(c => c.PatientName).Titled("Name");
+    columns.Add(c => c.MRN_FIN).Titled("MRN");
+    columns.Add(c => c.RoomNo).Titled("Room");
+    columns.Add(c => c.DOB).Titled("DOB").Format("{0:MM/dd/yyyy}");
+    columns.Add(c => c.Gender).Titled("Gender");
+    columns.Add(c => c.ServiceType).Titled("ServiceType");
+    columns.Add(c => c.Notes).Titled("Notes");
+}).Selectable(false).Sortable(false).Filterable(false)
+</div>
+

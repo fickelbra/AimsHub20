@@ -1,0 +1,20 @@
+﻿@model AimsHub.Models.ButtonWithHidden2
+
+@{
+    Layout = null;
+}
+
+@{ if (Model.uniqueID.HasValue)
+    {
+        <input type="button" id="@Model.uniqueID" name="@Model.uniqueID" onclick="@Model.jqueryFunction" class="@Model.cls glyphicon glyphicon-search" value="Comments/Notes" />
+        @Html.Hidden("hid" + Model.plogCol, Model.valu)
+        @Html.Hidden("hid" + Model.plogCol2, Model.valu2)
+    }
+    else
+    {
+        <input type="button" id="@Model.plogCol" name="@Model.plogCol" onclick="@Model.jqueryFunction" class="@Model.cls" value="Comments/Notes" />
+        @Html.Hidden("hid" + Model.plogCol, Model.valu)
+        @Html.Hidden("hid" + Model.plogCol2, Model.valu2)
+    }
+
+}

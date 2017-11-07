@@ -1,0 +1,18 @@
+﻿@model AimsHub.Models.DropWithHidden
+
+@{
+    Layout = null;
+}
+
+@{ if (Model.uniqueID.HasValue)
+    {
+        @Html.DropDownList(Model.plogCol, null, new { @class = Model.cls, data_fart = Model.plogCol + "_" + Model.uniqueID.ToString() })
+        @Html.Hidden("hid" + Model.plogCol, Model.valu)
+    }
+    else
+    {
+        @Html.DropDownList(Model.plogCol, null, new { @class = Model.cls })
+        @Html.Hidden("hid" + Model.plogCol, Model.valu)
+    }
+
+}

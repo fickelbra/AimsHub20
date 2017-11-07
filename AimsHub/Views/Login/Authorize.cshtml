@@ -1,0 +1,25 @@
+﻿@using AimsHub.Security
+
+@{
+    ViewBag.Title = "You are not authorized to access this feature";
+    if (HubSecurity.isPracAdmin)
+    {
+        Layout = "~//Views//Shared//_LayoutPCP.cshtml";
+    }
+    else 
+    {
+        Layout = "~//Views//Shared//_Layout.cshtml";
+    }
+}
+
+<h2>You are not authorized to access this content. Please click the back button on your browser, or </h2>
+@if (HubSecurity.isPracAdmin)
+{
+    <a href="@Url.Action("Index", "PracticeAdmin")">click here to return to the home page</a>
+}
+else
+{
+    <a href="@Url.Action("DisplayArea", "Schedule")">click here to go to schedule</a>
+}
+
+

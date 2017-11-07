@@ -1,0 +1,82 @@
+﻿@model ScheduleViewViewHehModel
+@using AimsHub.ViewModels
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<style>
+    label {
+        font-weight: bolder;
+    }
+</style>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>View</title>
+</head>
+<body>
+    <div style="margin-left: auto; margin-right: auto; text-align: center; background-color: @Model.BackColor; color: @Model.ForeColor;"> 
+        <h3>View Schedule</h3>
+        <table align="center">
+            <tr>
+                <td align="left">
+                    <label>User: </label>
+                </td>
+                <td align="left">
+                    @Html.DisplayFor(model => model.UserID)
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <label>Hospital: </label>
+                </td>
+                <td align="left">
+                    @Html.DisplayFor(model => model.Hospital)
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <label>Type: </label>
+                </td>
+                <td align="left">
+                    @Html.DisplayFor(model => model.Type)
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <label>Start: </label>
+                </td>
+                <td align="left">
+                    @Html.DisplayFor(model => model.StartString)
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <label>End: </label>
+                </td>
+                <td align="left">
+                    @Html.DisplayFor(model => model.EndString)
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <label>Title: </label>
+                </td>
+                <td>
+                    @Html.DisplayFor(model => model.Title)
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <label>Comments: </label>
+                </td>
+                <td align="left">
+                    @Html.DisplayFor(model => model.Comments)
+                </td>
+            </tr>
+        </table>
+        @*<button type="button" id="btnCancel" name="btnCancel" value="Cancel" onclick="window.close()">Cancel</button>*@
+    </div>
+</body>
+</html>

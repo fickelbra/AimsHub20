@@ -1,0 +1,54 @@
+﻿
+@{
+    ViewBag.Title = "Administrative Area NO USERS!! >:/";
+}
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<style type="text/css">
+    .bubbleButton {
+        height: 200px;
+        width: 200px;
+        margin-right: auto;
+        margin-left: auto;
+        text-align: center;
+    }
+    .bubbleButton:hover {
+        background-color: lightgrey;
+    }
+</style>
+<script type="text/javascript">
+    function manageUsers() {
+        window.location = '@Url.Action("ManageUsers", "Admin")';
+    }
+    function auditLog() {
+        window.location = '@Url.Action("AuditLog", "Admin")';
+    }
+    function currentUsers() {
+        window.location = '@Url.Action("CurrentUsers", "Admin")';
+    }
+    function techSupport() {
+        window.location = 'https://www.google.com';
+    }
+</script>
+<div>
+    <div class="AIMSBanner">
+        Administrative Modules
+    </div>
+    <div class="col-lg-12" style="margin-bottom: 50px;">
+        <div class="col-lg-3">
+            <input type="image" id="ManageUsers" src="~/Images/User.png" value="Manage Users" style="width: 200px; height: 150px; position: relative;" onclick="javascript:manageUsers()"  />
+            <h4 style="position: absolute; top: 150px; left: 55px; color: blue; font-weight: bolder; margin:auto; margin-left: auto; margin-right: auto; text-align: center; cursor: pointer;" onclick="javascript:$('#ManageUsers').click();"><u>Manage Users</u></h4>
+        </div>
+        <div class="col-lg-3">
+            <input type="image" id="AuditLog" src="~/Images/certificate-154169_1280.png" value="Audit Log" style="width: 200px; height: 150px; position: relative;" onclick="javascript:auditLog()" />
+            <h4 style="position: absolute; top: 150px; left: 55px; color: blue; font-weight: bolder; margin:auto; margin-left: auto; margin-right: auto; text-align: center; cursor: pointer;" onclick="javascript:$('#AuditLog').click();"><u>Audit Log</u></h4>
+        </div>
+        <div class="col-lg-3">
+            <input type="image" id="CurrentUsers" src="~/Images/magnifier-1787362_1280.png" value="Audit Log" style="width: 200px; height: 150px; position: relative;" onclick="javascript:currentUsers()" />
+            <h4 style="position: absolute; top: 150px; left: 55px; color: blue; font-weight: bolder; margin:auto; margin-left: auto; margin-right: auto; text-align: center; cursor: pointer;" onclick="javascript:$('#CurrentUsers').click();"><u>Current Users</u></h4>
+        </div>
+        <div class="col-lg-3">
+            <input type="image" id="TechSupport" src="~/Images/hammer-28636_1280.png" value="Audit Log" style="width: 200px; height: 150px; position: relative;" onclick="javascript:techSupport()" />
+            <h4 style="position: absolute; top: 150px; left: 55px; color: blue; font-weight: bolder; margin:auto; margin-left: auto; margin-right: auto; text-align: center; cursor: pointer;" onclick="javascript:$('#TechSupport').click();"><u>Tech Support</u></h4>
+        </div>
+    </div>
+</div>

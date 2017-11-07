@@ -1,0 +1,787 @@
+﻿@model PatientLogEditViewModel
+@using AimsHub.ViewModels;
+@using AimsHub.Models;
+
+@{
+    ViewBag.Title = "Patient Edit";
+    List<int> idList = (List<int>)Session["patientLogListOfID"];
+    int indexer = Model.Indexer;
+    int indexerDisplay = Model.IndexerDisplay;
+    int safeIndexerPrev = Model.SafeIndexerPrev; //Required to avoid out of range exceptions at page load as it parses the Razer code
+    int safeIndexerNext = Model.SafeIndexerNext; //Required to avoid out of range exceptions at page load as it parses the Razer code
+}
+
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#FaxPopup").dialog({
+            autoOpen: false,
+            show: 'clip',
+            resizable: true,
+            draggable: true,
+            title: "Custom Fax Submission",
+            height: 'auto',
+            width: '1000px',
+            modal: true,
+            position: { my: "top", at: "top", of: window }
+        });
+    });
+
+    $(function () {
+        $('#Patient_Hospital').change(function () {
+            $.getJSON('/PatientLog/jsonPCP',
+                { site: $('#Patient_Hospital').val() }, function (result) {
+                    var ddl = $('#Patient_PCP_Practice');
+                    ddl.empty();
+                    //ddl.append('<option selected="selected">No PCP</option>'); 
+                    $(result).each(function () {
+                        $(document.createElement('option'))
+                            .attr('value', this.Id)
+                            .text(this.Value)
+                            .appendTo(ddl);
+                        ddl.Add
+                    });
+                });
+        });
+    });
+    $(function () {
+        $('#Patient_Hospital').change(function () {
+            $.getJSON('/PatientLog/jsonAIMSPhy',
+                { site: $('#Patient_Hospital').val() }, function (result) {
+                    var ddl = $('#Patient_Physician');
+                    ddl.empty();
+                    //ddl.append('<option selected="selected">Unassigned</option>');
+                    $(result).each(function () {
+                        $(document.createElement('option'))
+                            .attr('value', this.Value)
+                            .text(this.Text)
+                            .appendTo(ddl);
+                        ddl.Add
+                    });
+                });
+        });
+    });
+    $(function () {
+        $('#Patient_ServiceType').change(function () {
+            $.getJSON('/PatientLog/jsonCheckFaxability',
+                { serviceType: $('#Patient_ServiceType option:checked').val(), id: $('#Patient_ID').val() }, function (result) {
+                    if (result != "Faxable!")
+                    {
+                        $('#alreadyFaxed').val('True');
+                    }
+                    else {
+                        $('#alreadyFaxed').val('False');
+                    }
+                });
+        });
+    });
+    function getPatient() {
+        var patient = {
+            ID: $('#Patient_ID').val(),
+            ServiceDate: $('#Patient_ServiceDate').val(),
+            Hospital: $('#Patient_Hospital option:checked').val(),
+            PCP_Practice: $('#Patient_PCP_Practice option:checked').val(),
+            PatientName: $('#Patient_PatientName').val(),
+            Physician: $('#Patient_Physician option:checked').val(),
+            MRN_FIN: $('#Patient_MRN_FIN').val(),
+            DOB: $('#Patient_DOB').val(),
+            RoomNo: $('#Patient_RoomNo').val(),
+            Gender: $('#Patient_Gender option:checked').val(),
+            ServiceType: $('#Patient_ServiceType option:checked').val(),
+            Notes: $('#Patient_Notes').val(),
+            DateCreated: $('#Patient_DateCreated').val(),
+            Comments: $('#Patient_Comments').val(),
+            AIMSComments: $('#Patient_AIMSComments').val(),
+            FaceSheet: $('#Patient_FaceSheet').val(),
+            PatientClass: $('#Patient_PatientClass option:checked').val()
+        };
+        return patient;
+    }
+    $(function () {
+        $('[name=saveOnly]').click(function () {
+            var patient = getPatient();
+            $.ajax({
+                url: '/PatientLog/jsonSubmitPatient',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(patient),
+                success: function (response) {
+                    alert(response);
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        });
+    });
+    //$(function () {
+    //    $('[name=saveAndFaxButton]').click(function () {
+    //        var patient = getPatient();
+    //        $.ajax({
+    //            url: '/PatientLog/jsonSubmitPatientAndFax',
+    //            type: "POST",
+    //            contentType: 'application/json; charset=utf-8',
+    //            data: JSON.stringify(patient),
+    //            success: function (response) {
+    //                alert(response);
+    //            },
+    //            error: function (response) {
+    //                alert(response.responseText);
+    //            }
+    //        });
+    //    });
+    //});
+    @*$(function () {
+        $('[name=saveAndPreviousButton]').click(function () {
+            var patient = getPatient();
+            $.ajax({
+                url: '/PatientLog/jsonSubmitPatient',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(patient),
+                success: function (response) {
+                    window.location.href = "@Url.Action("Edit", "PatientLog" , new RouteValueDictionary { { "id", idList[safeIndexerPrev] } } )";
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        });
+    });*@
+    @*$(function () {
+        $('[name=faxSavePreviousButton]').click(function () {
+            var patient = getPatient();
+            $.ajax({
+                url: '/PatientLog/jsonSubmitPatientAndFax',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(patient),
+                success: function (response) {
+                    window.location.href = "@Url.Action("Edit", "PatientLog" , new RouteValueDictionary { { "id", idList[safeIndexerPrev] } } )";
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        });
+    });*@
+    $(function () {
+        $('[name=saveAndNextButton]').click(function () {
+            var patient = getPatient();
+            $.ajax({
+                url: '/PatientLog/jsonSubmitPatient',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(patient),
+                success: function (response) {
+                    if (@indexer  == @idList.Count() - 1)
+                    {
+                        window.location.href = "@Url.Action("Edit", "PatientLog" , new RouteValueDictionary { { "id", idList[0] } } )";
+                    }
+                    else {
+                        window.location.href = "@Url.Action("Edit", "PatientLog" , new RouteValueDictionary { { "id", idList[safeIndexerNext] } } )";
+                    }
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        });
+    });
+    $(function () {
+        $('[name=faxSaveNextButton]').click(function () {
+            if ($('#alreadyFaxed').val() == 'True')
+            {
+                if (confirm("There is already a fax communication associated with this patient entry. Would you like to resend anyway?"))
+                {
+                    var patient = getPatient();
+                $.ajax({
+                    url: '/PatientLog/jsonSubmitPatientAndFax',
+                    type: "POST",
+                    contentType: 'application/json; charset=utf-8',
+                    data: JSON.stringify(patient),
+                    success: function (response) {
+                            if (@indexer  == @idList.Count() - 1)
+                            {
+                                window.location.href = "@Url.Action("Edit", "PatientLog" , new RouteValueDictionary { { "id", idList[0] } } )";
+                            }
+                            else {
+                                window.location.href = "@Url.Action("Edit", "PatientLog" , new RouteValueDictionary { { "id", idList[safeIndexerNext] } } )";
+                            }
+
+                        },
+                        error: function (response) {
+                            alert(response.responseText);
+                        }
+                    });
+                }
+                else {
+                    //Do nothing
+                }
+            }
+            else {
+                var patient = getPatient();
+                $.ajax({
+                    url: '/PatientLog/jsonSubmitPatientAndFax',
+                    type: "POST",
+                    contentType: 'application/json; charset=utf-8',
+                    data: JSON.stringify(patient),
+                    success: function (response) {
+                        if (@indexer  == @idList.Count() - 1)
+                        {
+                            window.location.href = "@Url.Action("Edit", "PatientLog" , new RouteValueDictionary { { "id", idList[0] } } )";
+                        }
+                        else {
+                            window.location.href = "@Url.Action("Edit", "PatientLog" , new RouteValueDictionary { { "id", idList[safeIndexerNext] } } )";
+                        }
+
+                    },
+                    error: function (response) {
+                        alert(response.responseText);
+                    }
+                });
+            }
+
+        });
+    });
+    $(function () {
+        $('#drpFax').change(function () {
+            if ($('#drpFax').val() == "AdmitNotice" || $('#drpFax').val() == "DischargeNotice")
+            {
+                //Display correct html
+                $('#AdmitDischarge').css('display', 'inherit');
+                $('#GeneralCommunication').css('display', 'none');
+                $('#FaxButtons').css('display', 'inherit');
+                $('#drpFax').css('display', 'none');
+                $('#DischargeSummary').css('display', 'none');
+                $('#hublogo').css('display', 'inherit');
+                $('#faxSendFax').css('display', 'inherit');
+
+                //Set values
+                if ($('#drpFax').val() == "AdmitNotice")
+                {
+                    $('#lblHeader').text("Admit Notice");
+                }
+                else {
+                    $('#lblHeader').text("Discharge Notice");
+                }             
+                $('[name=faxServiceDate]').val($('#Patient_ServiceDate').val());
+                $('#faxFaxTo').val($('#Patient_PCP_Practice option:checked').val());
+                $('#faxPatient').val($('#Patient_PatientName').val());
+                $('#faxDOB').val($('#Patient_DOB').val());
+                $('#faxMRN').val($('#Patient_MRN_FIN').val());
+                $('#faxComments').val($('#Patient_Comments').val());
+                $('#faxPhysician').val($('#Patient_Physician').val());
+            }
+            else if ($('#drpFax').val() == "default")
+            {
+                //Display correct html
+                $('#AdmitDischarge').css('display', 'none');
+                $('#GeneralCommunication').css('display', 'none');
+                $('#FaxButtons').css('display', 'none');
+                $('#drpFax').css('display', 'inherit');
+                $('#DischargeSummary').css('display', 'none');
+                $('#hublogo').css('display', 'none');
+                $('#faxSendFax').css('display', 'none');
+            }
+            else if ($('#drpFax').val() == "GeneralCommunication")
+            {
+                //Display correct html
+                $('#AdmitDischarge').css('display', 'none');
+                $('#GeneralCommunication').css('display', 'inherit');
+                $('#FaxButtons').css('display', 'inherit');
+                $('#drpFax').css('display', 'none');
+                $('#DischargeSummary').css('display', 'none');
+                $('#hublogo').css('display', 'inherit');
+                $('#faxSendFax').css('display', 'inherit');
+
+                //Set values
+                $('#lblHeader').text("General Communication");
+                $('#genServiceDate').val($('#Patient_ServiceDate').val());
+                $('#gengenTo').val($('#Patient_PCP_Practice option:checked').val());
+                $('#genPatient').val($('#Patient_PatientName').val());
+                $('#genDOB').val($('#Patient_DOB').val());
+                $('#genMRN').val($('#Patient_MRN_FIN').val());
+                $('#genComments').val($('#Patient_Comments').val());
+                $('#genPhysician').val($('#Patient_Physician').val());
+               
+            }
+            else if ($('#drpFax').val() == "DischargeSummary")
+            {
+                //Display correct html
+                $('#AdmitDischarge').css('display', 'none');
+                $('#GeneralCommunication').css('display', 'none');
+                $('#FaxButtons').css('display', 'inherit');
+                $('#drpFax').css('display', 'none');
+                $('#DischargeSummary').css('display', 'inherit');
+                $('#hublogo').css('display', 'inherit');
+                $('#faxSendFax').css('display', 'inherit');
+
+                //Set values
+                $('#lblHeader').text("Discharge Summary");
+                $('#disServiceDate').val($('#Patient_ServiceDate').val());
+                $('#disFaxTo').val($('#Patient_PCP_Practice option:checked').val());
+                $('#disPatient').val($('#Patient_PatientName').val());
+                $('#disDOB').val($('#Patient_DOB').val());
+                $('#disMRN').val($('#Patient_MRN_FIN').val());
+                $('#disComments').val($('#Patient_Comments').val());
+                $('#disPhysician').val($('#Patient_Physician').val());
+            }
+        });
+    });
+    function hideFax()
+    {
+        $('#FaxPopup').dialog('close');
+    }
+    function showFax()
+    {
+        $('#drpFax').val('default');
+        $('#drpFax').show();
+        $('#AdmitDischarge').hide();
+        $('#GeneralCommunication').hide();
+        $('#DischargeSummary').hide();
+        $('#hublogo').hide();
+        $('#lblHeader').hide();
+        $('#faxSendFax').hide();
+        $('#FaxPopup').dialog('open');
+    }
+    function sendFax()
+    {
+        //$('#drpFax option[value="default"]').prop('selected', true);
+        hideFax();
+        location.reload();
+    }
+
+</script>
+
+<div class="AIMSBanner">
+    @Html.DisplayFor(model => model.Patient.PatientName) - @Html.DisplayFor(model => model.Patient.ServiceDate) - @Html.DisplayFor(model => model.Patient.RoomNo)
+</div>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+    @Html.HiddenFor(model => model.Patient.ID, new { name = "ID" })
+    //@Html.HiddenFor(model => model.Patient.FaceSheet, new { name = "FaceSheet" })
+    //@Html.HiddenFor(model => model.Patient.Notes, htmlAttributes: new { @name = "Notes" })
+    @Html.HiddenFor(model => model.Patient.DateCreated, new { @name = "DateCreated" })
+    @Html.HiddenFor(model => model.Patient.AIMSComments, new { @name = "AIMSComments" })
+    @Html.HiddenFor(model => model.alreadyFaxed, new { @name = "alreadyFaxed" })
+        <div class="col-lg-12">
+            <div class="col-lg-6">
+                <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Edit", new { id = idList[0] })" name="firstButton">
+                    <span class="glyphicon glyphicon-fast-backward" aria-hidden="true"></span>
+                    <span>First</span>
+                </a>
+                @if (indexer != 0)
+                {
+                    <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Edit", new { id = idList[indexer - 1] })" name="previousButton">
+                        <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                        <span>Previous</span>
+                    </a>
+                }
+                else
+                {
+                    <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Edit", new { id = idList[idList.Count() - 1] })" name="previousButton">
+                        <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                        <span>Previous</span>
+                    </a>
+                }
+
+                @if (indexer != idList.Count() - 1)
+                {
+                    <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Edit", new { id = idList[indexer + 1] })" name="nextButton">
+                        <span>Next</span>
+                        <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+                    </a>
+                }
+                else
+                {
+                    <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Edit", new { id = idList[0] })" name="nextButton">
+                        <span>Next</span>
+                        <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+                    </a>
+                }
+                <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Edit", new { id = idList[idList.Count() - 1] })" style="margin-right: 50px;" name="lastButton">
+                    <span>Last</span>
+                    <span class="glyphicon glyphicon-fast-forward" aria-hidden="true"></span>
+                </a>
+
+                <strong id="patientCount">Showing patient @indexerDisplay of @idList.Count()</strong>
+            </div>
+            <div class="col-lg-4"></div>
+            <div class="col-lg-2">
+                <a type="button" class="btn btn-primary btn-sm" style="margin-right: 5px;" href="@Url.Action("Index", "PatientLog",  new RouteValueDictionary { { "grid-column", Request.QueryString["grid-column"]  }, { "grid-dir", Request.QueryString["grid-dir"] }, { "grid-filter", Request.QueryString["grid-filter"] } }  )" style="float: right;">
+                    <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                    <span>Return to Patient List</span>
+                </a>
+            </div>
+        </div>    
+        <div class="col-lg-12" style="margin-top: 10px;">
+            <div class="form-horizontal">
+                <span class="col-lg-4">
+                    @Html.LabelFor(model => model.Patient.ServiceType, htmlAttributes: new { @class = "control-label col-md-1" })
+                    @Html.DropDownListFor(model => model.Patient.ServiceType, Model.ServiceTypeList, new { @class = "form-control drop servicetype", @name = "ServiceType" })
+                </span>
+                <div class="col-lg-2">
+                    @Html.LabelFor(model => model.Patient.MRN_FIN, htmlAttributes: new { @class = "control-label col-md-1" })
+                    @Html.EditorFor(model => model.Patient.MRN_FIN, new { htmlAttributes = new { @class = "form-control mrn", @name = "MRN_FIN" } })
+                </div>
+                <div class="col-lg-2">
+                    @Html.LabelFor(model => model.Patient.DOB, htmlAttributes: new { @class = "control-label col-md-1" })
+                    @Html.EditorFor(model => model.Patient.DOB, new { htmlAttributes = new { @class = "form-control dob date-pickerDOB", @name = "DOB" } })
+                </div>
+                <div class="col-lg-2">
+                    @Html.LabelFor(model => model.Patient.Gender, htmlAttributes: new { @class = "control-label col-md-1", @name = "Gender" })
+                    @Html.DropDownListFor(model => model.Patient.Gender, Model.GenderList, new { @class = "form-control drop" })
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-12" style="margin-top: 25px;">
+            <div class="col-lg-6">
+                <a type="submit" class="btn btn-success" href="#" name="saveOnly">
+                    <span>Save</span>
+                </a>
+                <a type="submit" class="btn btn-success" href="#" name="saveAndNextButton" style="margin-left: 5px;">
+                    <span>Save and Next</span>
+                    <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+                </a>
+                <a type="submit" class="btn btn-success" href="#" style="margin-right: 50px;" name="faxSaveNextButton">
+                    <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+                    <span>Fax, Save and Next</span>
+                    <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+                </a>
+            </div>
+            <div class="col-lg-2">
+                <a class="btn btn-primary" onclick="javascript:showFax()" style="margin-left: 20px;" name="customFaxButton">
+                    <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+                    <span>Send Custom Fax</span>
+                    <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+                </a>
+            </div>
+        </div>
+        <div id="tabs" class="col-lg-12 tabs-centre tabs-smaller" style="height:542px; margin-top: 20px;">
+            <ul>
+                <li><a href="#tabs-1">Service Info</a></li>
+                <li><a href="#tabs-2">Notes</a></li>
+                <li><a href="#tabs-3">Facesheet</a></li>
+            </ul>
+            <div id="tabs-1">
+                <div class="col-lg-12">
+                    @Html.LabelFor(model => model.Patient.Comments, htmlAttributes: new { @class = "control-label col-md-1" })
+                    @Html.TextAreaFor(model => model.Patient.Comments, htmlAttributes: new { @class = "comments", @name = "Comments", style = "width: 100%; height: 280px;" })
+                    @Html.ValidationMessageFor(model => model.Patient.Comments, "", new { @class = "text-danger" })
+                </div>
+                <div class="col-lg-12">
+                    <div class="col-lg-3">
+                        @Html.LabelFor(model => model.Patient.Physician, htmlAttributes: new { @class = "control-label col-md-1" })
+
+                        @Html.DropDownListFor(model => model.Patient.Physician, Model.PhysicianList, new { @class = "form-control drop" })
+                        @Html.ValidationMessageFor(model => model.Patient.Physician, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-lg-3">
+                        @Html.LabelFor(model => model.Patient.Hospital, htmlAttributes: new { @class = "control-label col-md-1" })
+
+                        @Html.DropDownListFor(model => model.Patient.Hospital, Model.HospitalList, new { @class = "form-control drop" })
+                        @Html.ValidationMessageFor(model => model.Patient.Hospital, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-lg-3">
+                        @Html.LabelFor(model => model.Patient.PCP_Practice, htmlAttributes: new { @class = "control-label col-md-1" })
+
+                        @Html.DropDownListFor(model => model.Patient.PCP_Practice, Model.PCPList, new { @class = "form-control drop" })
+                        @Html.ValidationMessageFor(model => model.Patient.PCP_Practice, null, new { @class = "text-danger" })
+                    </div>
+                    <div class="col-lg-3">&nbsp;</div>
+                </div>
+                <div class="col-lg-12">
+                    <div class="col-lg-3">
+                        @Html.LabelFor(model => model.Patient.PatientName, htmlAttributes: new { @class = "control-label col-md-1" })
+
+                        @Html.EditorFor(model => model.Patient.PatientName, new { htmlAttributes = new { @class = "form-control patient", @name = "PatientName" } })
+                        @Html.ValidationMessageFor(model => model.Patient.PatientName, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-lg-3">
+                        @Html.LabelFor(model => model.Patient.ServiceDate, htmlAttributes: new { @class = "control-label col-md-1" })
+
+                        @Html.EditorFor(model => model.Patient.ServiceDate, new { htmlAttributes = new { @class = "form-control date-picker", @name = "ServiceDate" } })
+                        @Html.ValidationMessageFor(model => model.Patient.ServiceDate, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-lg-3">
+                        @Html.LabelFor(model => model.Patient.RoomNo, htmlAttributes: new { @class = "control-label col-md-1" })
+
+                        @Html.EditorFor(model => model.Patient.RoomNo, new { htmlAttributes = new { @class = "form-control", @name = "RoomNo" } })
+                        @Html.ValidationMessageFor(model => model.Patient.RoomNo, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="col-lg-3">
+                        @Html.LabelFor(model => model.Patient.PatientClass, htmlAttributes: new { @class = "control-label col-md-1" })
+                        @Html.DropDownListFor(model => model.Patient.PatientClass, Model.PatientClassList, new { @class = "form-control drop ptcl", @name = "PatientClass" })
+                        @Html.ValidationMessageFor(model => model.Patient.PatientClass, "", new { @class = "text-danger" })
+                        @Html.HiddenFor(model => model.Patient.DateCreated, new { @name = "DateCreated" })
+                    </div>
+                </div>
+            </div>
+            <div id="tabs-2">
+                <div class="col-lg-12">
+                    @Html.LabelFor(model => model.Patient.Notes, htmlAttributes: new { @class = "control-label col-md-1" })
+                    @Html.TextAreaFor(model => model.Patient.Notes, htmlAttributes: new { @class = "notes", @name = "Comments", style = "width: 100%; height: 400px;" })
+                    @Html.ValidationMessageFor(model => model.Patient.Notes, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div id="tabs-3">
+                <div class="col-lg-12">
+                    @Html.LabelFor(model => model.Patient.FaceSheet, htmlAttributes: new { @class = "control-label col-md-1" })
+                    @Html.TextAreaFor(model => model.Patient.FaceSheet, htmlAttributes: new { @class = "notes", @name = "Comments", style = "width: 100%; height: 400px;" })
+                    @Html.ValidationMessageFor(model => model.Patient.FaceSheet, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+    <div class="col-lg-12" style="margin-top: 10px;">
+        <div class="col-lg-6">
+            <a type="submit" class="btn btn-success" href="#" name="saveOnly">
+                <span>Save</span>
+            </a>
+            <a type="submit" class="btn btn-success" href="#" name="saveAndNextButton">
+                <span>Save and Next</span>
+                <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+            </a>
+            <a type="submit" class="btn btn-success" href="#" style="margin-right: 50px;" name="faxSaveNextButton">
+                <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+                <span>Fax, Save and Next</span>
+                <span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span>
+            </a>
+        </div>
+        <div class="col-lg-2 col-lg-offset-4">
+            <a type="button" class="btn btn-primary btn-sm" href="@Url.Action("Index", "PatientLog",  new RouteValueDictionary { { "grid-column", Request.QueryString["grid-column"]  }, { "grid-dir", Request.QueryString["grid-dir"] }, { "grid-filter", Request.QueryString["grid-filter"] } }  )" style="margin-right: 100px;">
+                <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+                <span>Return to Patient List</span>
+            </a>
+        </div>
+    </div>
+    <div id="FaxPopup" style="display: none; max-height: 1000px; overflow-y: auto; overflow-x: hidden;">
+        <span class="col-md-12">
+            <span class="col-md-offset-4">
+                <select id="drpFax">
+                    <option value="default">Select a fax type..</option>
+                    <option value="AdmitNotice">Admit Notice</option>
+                    <option value="DischargeNotice">Discharge Notice</option>
+                    <option value="GeneralCommunication">General Communication</option>
+                    <option value="DischargeSummary">Discharge Summary</option>
+                </select>
+                <img src="~/Images/AIMS_Logo.jpg" id="hublogo" style="margin-left: auto; margin-right: auto; height: 70px; width: 220px; display: none;" />
+            </span>
+        </span>
+        <span class="col-md-12">
+            <label id="lblHeader" style="background-color: lightgray; font-weight: bolder; width: 200px; margin-left: auto; margin-right: auto; text-align: center;"></label>
+            <input type="button" class="btn btn-success" id="faxSendFax" value="Send Fax" style="display:none; float: right;" onclick="javascript:sendFax()" />
+        </span>
+        <div id="AdmitDischarge" style="display: none;">
+            <span class="col-md-12" style="margin-top:35px;">
+                <span class="col-md-2">
+                    <input type="text" id="faxServiceDate" name="faxServiceDate" />
+                </span>
+                <span class="col-md-6 col-md-offset-2" style="float: right;">
+                    Fax No: <input type="text" id="faxFaxNumber" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                <span class="col-md-4">
+                    Fax To: <input type="text" id="faxFaxTo" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                <label id="faxLabel"></label>
+            </span>
+            <span class="col-md-12">
+                <strong>Thank you for referring your patients to the AIMS-Hospitalists service.</strong>
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                <span class="col-md-2">
+                    Your Patient:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="faxPatient" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                <span class="col-md-2">
+                    DOB:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="faxDOB" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                <span class="col-md-6">
+                    was admitted to @Model.Patient.Hospital, on <input type="text" id="faxServiceDate" name="faxServiceDate" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                <textarea id="faxComments" rows="6" style="width: 80%; margin-left: auto; margin-right: auto;"></textarea>
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                <span class="col-md-6">
+                    The patient's MRN number is: <input type="text" id="faxMRN" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                We will keep you informated of your patient's condition and contact you for follow up care at discharge.
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                If you need to contact one of our hospitalists at any time to obtain additional information regarding your patient, please do note hesitate to contact us on our 24 hour pager number <strong>248-584-6136.</strong>
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                Sincerely,
+            </span>
+            <span class="col-md-12" style="margin-top:15px;">
+                <input type="text" id="faxPhysician" />
+            </span>
+        </div>
+        <div id="GeneralCommunication" style="display: none;">
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Service Date:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="genServiceDate" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Fax Number:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="genFaxNumber" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Fax To:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="genFaxTo" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Patient Name:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="genPatient" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    DOB:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="genDOB" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Patient MRN:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="genMRN" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Comments:
+                </span>
+                <span class="col-md-10">
+                    <textarea id="genComments" rows="6" style="width: 80%;"></textarea>
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                Sincerely,
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <input type="text" id="genPhysician" />
+            </span>
+        </div>
+        <div id="DischargeSummary" style="display: none;">
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Service Date:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="disServiceDate" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Fax Number:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="disFaxNumber" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Fax To:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="disFaxTo" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Patient Name:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="disPatient" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    DOB:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="disDOB" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Patient MRN:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="disMRN" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <span class="col-md-2">
+                    Discharged From:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="disHospital" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <label style="border: 1px solid black; margin-left: auto; margin-right: auto;">IMPORTANT: The patient has been instructed to follow up with you within five days of discharge because prompt follow-up care is essential to ensure continuity of care, reduce hospital readmissions, and provide good patient outcomes.</label>
+            </span>
+            <span class="col-md-12">
+                <span class="col-md-2">
+                    Sincerely:
+                </span>
+                <span class="col-md-6">
+                    <input type="text" id="disPhysician" />
+                </span>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <strong>Hospital Discharge Summary</strong>
+            </span>
+            <span class="col-md-12">
+                <textarea id="disSummary" rows="15" style="width: 100%;"></textarea>
+            </span>
+            <span class="col-md-12" style="margin-top:10px;">
+                <strong>Additional Comments</strong>
+            </span>
+            <span class="col-md-12">
+                <textarea id="disAdditional" rows="15" style="width: 100%;"></textarea>
+            </span>
+        </div>
+    </div>
+}

@@ -1,0 +1,483 @@
+﻿@model PracticeAdminEditPreferencesViewModel
+@using AimsHub.Models;
+@using AimsHub.ViewModels;
+@{
+    ViewBag.Title = "Preferences";
+    Layout = "~/Views/Shared/_LayoutPCP.cshtml";
+}
+
+<link href="~/Scripts/themes/flick/theme.css" rel="stylesheet" />
+<link href="~/Content/AimsStyle.css" rel="stylesheet" />
+<style type="text/css">
+    .tab1text {
+        min-width: 400px;
+    }
+    td input[type=text] {
+        min-width: 300px;
+    }
+    input[type=password] {
+        min-width: 400px;
+    }
+    input[type=button] {
+        padding: 7px;
+        line-height: 20px;
+        margin-bottom: 10px;
+    }
+    label[name=AllWarning] {
+        color: red;
+    }
+</style>
+<script type="text/javascript">
+    $(document).ready(function () {
+        if ($('#drpPractice').val() == "ALL")
+        {
+            $('[name=AllWarning]').each(function () {
+                $(this).css('display', 'inherit');
+            });
+        }
+
+        switch ($('#tabReturn').val())
+        {
+            case "2":
+                $('#tabs').tabs({ active: 1 });
+                break;
+            case "3":
+                $('#tabs').tabs({ active: 2 });
+                break;
+        }
+    });
+    //function getPracticeInformation() {
+    //    var prac;
+    //    if ($('#drpPractices').val() == "ALL")
+    //    {
+    //        prac = {
+    //            PracID: "ALL",
+    //            PracName: $('#PracName').val(),
+    //            Address1: $('#Address1').val(),
+    //            Address2: $('#Address2').val(),
+    //            Address3: $('#Address3').val(),
+    //            City: $('#City').val(),
+    //            State: $('#State').val(),
+    //            Zip: $('#Zip').val(),
+    //            Phone: $('#Phone').val(),
+    //            Fax: $('#Fax').val(),
+    //            Email: $('#Email').val(),
+    //            OfficeManager: $('#OfficeManager').val(),
+    //            Other: $('#Other').val(),
+    //            PDFPassword: $('#PDFPassword').val()
+    //        };  
+    //    }
+    //    else {
+    //        prac = {
+    //            PracID: $('#hidPrac').val(),
+    //            PracName: $('#PracName').val(),
+    //            Address1: $('#Address1').val(),
+    //            Address2: $('#Address2').val(),
+    //            Address3: $('#Address3').val(),
+    //            City: $('#City').val(),
+    //            State: $('#State').val(),
+    //            Zip: $('#Zip').val(),
+    //            Phone: $('#Phone').val(),
+    //            Fax: $('#Fax').val(),
+    //            Email: $('#Email').val(),
+    //            OfficeManager: $('#OfficeManager').val(),
+    //            Other: $('#Other').val(),
+    //            PDFPassword: $('#PDFPassword').val()
+    //        };     
+    //    }
+    //    return prac;
+    //}
+    //function getCommunicationMethod() {
+    //    var comm;
+    //    if ($('#drpPractices').val() == "ALL")
+    //    {
+    //        comm = {
+    //            PracID: "ALL",
+    //            EmailNotification: $('#selectedPrac_EmailNotification').is(":checked"),
+    //            FaxNotification: $('#selectedPrac_FaxNotification').is(":checked")
+    //        }
+    //    }
+    //    else {
+    //        comm = {
+    //            PracID: $('#hidPrac').val(),
+    //            EmailNotification: $('#selectedPrac_EmailNotification').is(":checked"),
+    //            FaxNotification: $('#selectedPrac_FaxNotification').is(":checked")
+    //        }
+    //    }
+    //    return comm;
+    //}
+    function getSpecialties() {
+        var spec = [];
+        var i = 0;
+        if ($('#drpPractices').val() == "ALL") {
+            $('#specialtiesTable tr').each(function () {
+                if (i > 0) {
+                    spec.push({
+                        PracID: "ALL",
+                        Specialty: $(this).first(td).html(),
+                        FirstChoice: $(this).find('[name=s_FirstChoice]').val(),
+                        Backup: $(this).find('[name=s_Backup]').val(),
+                        Comments: $(this).find('[name=s_Comments]').val()
+                    });
+                }
+                i++;
+            });
+        }
+        else {
+            $('#specialtiesTable tr').each(function () {
+                if (i > 0) {
+                    spec.push({
+                        ID: $(this).find('#s_ID').val(),
+                        PracID: $('#hidPrac').val(),
+                        Specialty: $(this).children(":first").html(),
+                        FirstChoice: $(this).find('#s_FirstChoice').val(),
+                        Backup: $(this).find('#s_Backup').val(),
+                        Comments: $(this).find('#s_Comments').val()
+                    });
+                }
+                i++;
+            });
+        }     
+        return spec;
+    }
+    //function savePracticeInformation() {
+    //    var prac = getPracticeInformation();
+    //    $.ajax({
+    //        url: '/PracticeAdmin/jsonSubmitPracticeInformation',
+    //        type: "POST",
+    //        contentType: 'application/json; charset=utf-8',
+    //        data: JSON.stringify(prac),
+    //        success: function (response) {
+    //            alert(response);
+    //        },
+    //        error: function (response) {
+    //            alert(response.responseText);
+    //        }
+    //    });
+    //}
+    //function saveCommunicationMethod() {
+    //    var comm = getCommunicationMethod();
+    //    $.ajax({
+    //        url: '/PracticeAdmin/jsonSubmitCommunicationMethod',
+    //        type: "POST",
+    //        contentType: 'application/json; charset=utf-8',
+    //        data: JSON.stringify(comm),
+    //        success: function (response) {
+    //            alert(response);
+    //        },
+    //        error: function (response) {
+    //            alert(response.responseText);
+    //        }
+    //    });
+    //}
+    function saveSpecialties() {
+        var table = getSpecialties();
+        if ($('drpPractices').val() == 'ALL')
+        {
+            $.ajax({
+                url: '/PracticeAdmin/jsonSubmitSpecialtiesAll',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(table),
+                success: function (response) {
+                    alert(response);
+                    triggerSubmit();
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        }
+        else {
+            $.ajax({
+                url: '/PracticeAdmin/jsonSubmitSpecialties',
+                type: "POST",
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(table),
+                success: function (response) {
+                    alert(response);
+                    triggerSubmit();
+                },
+                error: function (response) {
+                    alert(response.responseText);
+                }
+            });
+        }     
+    }
+    function updateHiddenPrac() {
+        //If ALL is selected, select first practice in list to send to server
+        if ($('#drpPractice').val() != "ALL")
+        {
+            $('#hidPrac').val($('#drpPractice').val());
+            $('#hidAll').val("");
+        }
+        else {
+            $('#hidPrac').val($('#drpPractice option:nth-child(2)').val());
+            $('#hidAll').val("true");
+        }     
+    }
+    function triggerSubmit() {
+        $('#btnSubmit').click();
+    }
+    function newPrac() {
+        updateHiddenPrac();
+        triggerSubmit();
+    }
+    function discardChanges() {
+        location.href = "@Url.Action("EditPreferences","PracticeAdmin")";
+    }
+    function setTabHidden(link)
+    {
+        if (link.href.indexOf("tabs-1") > -1)
+        {
+            $('#tabReturn').val(1);
+        }
+        else if (link.href.indexOf("tabs-2") > -1)
+        {
+            $('#tabReturn').val(2);
+        }
+        else if (link.href.indexOf("tabs-3") > -1)
+        {
+            $('#tabReturn').val(3);
+        }
+    }
+</script>
+
+<div class="AIMSBanner">
+    Edit Practice Preferences
+</div>
+
+@using (Html.BeginForm("EditPreferences", "PracticeAdmin", FormMethod.Post))
+{
+<span class="col-lg-12">
+    <span class="col-lg-5 col-lg-offset-5">
+        <strong>Select Practice</strong>&nbsp; @Html.DropDownListFor(model => model.selectedPrac.PracID, Model.practices, new { id = "drpPractice", onchange = "javascript:newPrac()" })
+    </span>
+    <input type="submit" style="display: none;" name="btnSubmit" id="btnSubmit" />
+    <input type="hidden" id="hidPrac" name="hidPrac" value="@Model.hidPrac" />
+    <input type="hidden" id="tabReturn" name="tabReturn" value="@Model.tabReturn" />
+    <input type="hidden" id="hidAll" name="hidAll" value="@Model.hidAll" />
+</span>
+
+<div id="tabs" class="col-lg-12 tabs-centre tabs-nohdr tabs-smaller" style="margin-top: 10px;">   
+    <ul>
+        <li><a href="#tabs-1" onclick="javascript:setTabHidden(this)">Pratice Information</a></li>
+        <li><a href="#tabs-2" onclick="javascript:setTabHidden(this)">Preferred Method of Communication</a></li>
+        <li><a href="#tabs-3" onclick="javascript:setTabHidden(this)">Preferred Consultant by Speciality</a></li>
+    </ul>
+    <div id="tabs-1">
+        <div class="col-lg-offset-3">
+            <div class="col-lg-12">
+                    <div class="col-lg-3">
+                        <label>Practice Name: </label>
+                    </div>
+                    <div>
+                        @*<input type="text" name="tab1text"  id="PracName" readonly="readonly" value="@Model.selectedPrac.PracName" />*@
+                        @Html.TextBoxFor(model => model.selectedPrac.PracName, new { @readonly="readonly", @class="tab1text" })
+                    </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>Address Line 1: </label>
+                </div>
+                <div>
+                    @*<input type="text" @class="tab1text"  id="Address1" value="@Model.selectedPrac.Address1" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.Address1, new { @class="tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>Address Line 2: </label>
+                </div>
+                <div>
+                    @*<input type="text" @class="tab1text"  id="Address2" value="@Model.selectedPrac.Address2" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.Address2, new { @class = "tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>Address Line 3: </label>
+                </div>
+                <div>
+                    @*<input type="text" @class="tab1text"  id="Address3" value="@Model.selectedPrac.Address3" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.Address3, new { @class = "tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>City: </label>
+                </div>
+                <div>
+                    @*<input type="text" @class="tab1text"  id="City" value="@Model.selectedPrac.City" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.City, new { @class = "tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>State: </label>
+                </div>
+                <div>
+                    @*<input type="text" @class="tab1text"  id="State" value="@Model.selectedPrac.State" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.State, new { @class = "tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>Zip: </label>
+                </div>
+                <div>
+                    @Html.TextBoxFor(model => model.selectedPrac.Zip, new { @class = "tab1text" })
+                    @*<input type="text" @class="tab1text"  id="Zip" value="@Model.selectedPrac.Zip" />*@
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>Phone: </label>
+                </div>
+                <div>
+                    @*<input type="text" @class="tab1text"  id="Phone" value="@Model.selectedPrac.Phone" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.Phone, new { @class = "tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>Fax: </label>
+                </div>
+                <div>
+                    @*<input type="text" @class="tab1text"  id="Fax" value="@Model.selectedPrac.Fax" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.Fax, new { @class = "tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>Email: </label>
+                </div>
+                <div>
+                    @*<input type="text" @class="tab1text"  id="Email" value="@Model.selectedPrac.Email" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.Email, new { @class = "tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>Office Manager: </label>
+                </div>
+                <div>
+                    @*<input type="text" @class="tab1text"  id="OfficeManager" value="@Model.selectedPrac.OfficeManager" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.OfficeManager, new { @class = "tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>Other: </label>
+                </div>
+                <div>
+                    @*<input type="text" @class="tab1text"  id="Other" value="@Model.selectedPrac.Other" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.Other, new { @class = "tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-3">
+                    <label>Document Password: </label>
+                </div>
+                <div>
+                    @*<input type="password" id="PDFPassword" value="@Model.selectedPrac.PDFPassword" />*@
+                    @Html.TextBoxFor(model => model.selectedPrac.PDFPassword, new { @class = "tab1text" })
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="col-lg-5">
+                    @*<button type="button" style="line-height: 10px;" value="Save Practice Information" class="btn btn-success btn-sm" onclick="javascript:savePracticeInformation()" />*@
+                    <input type="submit" id="UpdatePracticeInformation" name="UpdatePracticeInformation" value="Update Practice Information" class="btn btn-success" onclick="javascript:savePracticeInformation()" />
+                    <div><label name="AllWarning" style="display: none;">These changes will be applied to ALL practices!</label></div>
+                </div>
+                <div class="col-lg-4 ">
+                    @*<button type="button" value="Cancel Changes" class="btn btn-sm" onclick="javascript:discardChanges()" />*@
+                    <input type="button" value="Cancel Changes" class="btn" onclick="javascript:discardChanges()" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="tabs-2">
+        <div class="form-horizontal">
+            <div class="col-lg-12">
+                <div class="col-lg-offset-2">
+                    <div class="col-lg-3">
+                        <label>Notification Method: </label>
+                    </div>
+                    <div class="col-lg-6 ">
+                        <span>
+                            @*<input type="checkbox" id="EmailNotification" value="@Model.selectedPrac.EmailNotification" /><label>Email</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type="checkbox" id="FaxNotification" value="@Model.selectedPrac.FaxNotification" /><label>Fax</label>*@
+                            @Html.CheckBoxFor(model => model.selectedPrac.EmailNotification)<label>Email</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            @Html.CheckBoxFor(model => model.selectedPrac.FaxNotification)<label>Fax</label>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12" style="margin-top: 30px;">
+                <div class="col-lg-offset-2">
+                    <div class="col-lg-5">
+                        @*<button type="button" value="Save Communication Method"  class="btn btn-success btn-sm" onclick="javascript:saveCommunicationMethod()" />*@
+                        <input type="submit" id="UpdateCommunicationMethod" name="UpdateCommunicationMethod" value="Update Communication Information" class="btn btn-success" onclick="javascript:saveCommunicationMethod()" />
+                        <div><label name="AllWarning" style="display: none;">These changes will be applied to ALL practices!</label></div>
+                    </div>
+                    <div class="col-lg-4 ">
+                        @*<button type="button" value="Cancel Changes" class="btn btn-sm" onclick="javascript:discardChanges()" />*@
+                        <input type="button" value="Cancel Changes" class="btn" onclick="javascript:discardChanges()" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="tabs-3">
+        <div class="col-lg-12">
+            <div class="col-lg-offset-2">
+                <div class="col-lg-5">
+                    @*<button type="button" value="Save Specialties" class="btn btn-success btn-sm" onclick="javascript:saveSpecialties()" />*@
+                    <input type="button" id="UpdateSpecialties" name="UpdateSpecialties" value="Update Specialties" class="btn btn-success" onclick="javascript:saveSpecialties()" />
+                    <div><label name="AllWarning" style="display: none;">These changes will be applied to ALL practices!</label></div>
+                </div>
+                <div class="col-lg-4 ">
+                    @*<button type="button" value="Cancel Changes" class="btn btn-sm" onclick="javascript:discardChanges()" />*@
+                    <input type="button" value="Cancel Changes" class="btn" onclick="javascript:discardChanges()" />
+                </div>
+            </div>
+        </div>
+        <table id="specialtiesTable" class="table table-bordered table-striped" style="height:900px;">
+            <tr>
+                <th>Speciality</th>
+                <th style="display: none">ID</th>
+                <th>First Choice</th>
+                <th>Backup</th>
+                <th>Comments</th>
+            </tr>
+            @foreach (RefPracSpecialty s in Model.specialties)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(model => s.Specialty)</td>
+                    <td style="display: none;">@Html.HiddenFor(model => s.ID)</td>
+                    <td style="min-width: 300px;">@Html.TextBoxFor(model => s.FirstChoice)</td>
+                    <td style="min-width: 300px;">@Html.TextBoxFor(model => s.Backup)</td>
+                    <td style="min-width: 400px;">@Html.TextBoxFor(model => s.Comments, new { style = "min-width: 400px;" })</td>
+                </tr>
+            }
+        </table>
+        <div class="col-lg-12">
+            <div class="col-lg-offset-2">
+                <div class="col-lg-5">
+                    @*<button type="button" value="Save Specialties" class="btn btn-success btn-sm" onclick="javascript:saveSpecialties()" />*@
+                    <input type="button" id="UpdateSpecialties" name="UpdateSpecialties"  value="Update Specialties" class="btn btn-success" onclick="javascript:saveSpecialties()" />
+                    <div><label name="AllWarning" style="display: none;">These changes will be applied to ALL practices!</label></div>
+                </div>
+                <div class="col-lg-4 ">
+                    @*<button type="button" value="Cancel Changes" class="btn btn-sm" onclick="javascript:discardChanges()" />*@
+                    <input type="button" value="Cancel Changes" class="btn" onclick="javascript:discardChanges()" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+
+

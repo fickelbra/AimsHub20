@@ -1,0 +1,174 @@
+﻿@model AimsHub.Models.AccountChangeModel
+@using AimsHub.Security
+
+@{
+    ViewBag.Title = "Change My Password";
+    string javaSuccess = Model.success ? "true" : "false";
+    if (HubSecurity.isExpired)
+    {
+        Layout = null;
+    }
+    else if (HubSecurity.isPracAdmin)
+    {
+        Layout = "~//Views//Shared//_LayoutPCP.cshtml";
+    }
+}
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        $(".successDiv").dialog({
+            autoOpen: false,
+            show: 'explode',
+            resizable: false,
+            draggable: true,
+            title: "Password changed successfully!",
+            height: 'auto',
+            width: 'auto',
+            modal: true,
+            dialogClass: "noTitleBar",
+            position: { my: "top", at: "top", of: $(window) }
+        });
+        if ('@javaSuccess' == 'true')
+        {
+            $('.successDiv').dialog('open');
+            window.setTimeout(function () { $('.successDiv').dialog('close'); window.location.href = "@Url.Action("Logoff", "Login")"; }, 5000);
+            
+        }
+    });
+
+</script>
+
+<style type="text/css">
+    .loginTxt {
+        padding: 10px;
+        width: 300px;
+        margin-bottom: 25px;
+        font-size: 1.0em;
+        font-weight: normal;
+        text-shadow: 1px 0 1px #fff;
+        background: #fff;
+        border: 1px solid rgb(27,145,255);
+        -webkit-border-radius: 4px;
+        -moz-border-radius: 4px;
+        border-radius: 4px;
+        -webkit-box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+        -moz-box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+        box-shadow: inset 0 1px 4px 0 rgba(176, 199, 221, .5);
+        -webkit-transition: all 0.4s linear;
+        -moz-transition: all 0.4s linear;
+        transition: all 0.4s linear;
+    }
+
+    .loginBtn {
+        outline: none;
+        box-sizing: border-box;
+        display: block;
+        min-width: 60px;
+        height: 36px;
+        padding: 0 22px;
+        cursor: pointer;
+        color: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-color: rgb(27,145,255);
+        vertical-align: middle;
+        line-height: 36px;
+        font-size: 1.2em;
+        font-weight: bold;
+        text-align: center;
+        background-color: rgb(27,145,255);
+        background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, rgb(27,145,255)), color-stop(100%, rgb(27,145,255)));
+        background-image: -webkit-linear-gradient(top, #5d93eb, rgb(27,145,255));
+        background-image: -moz-linear-gradient(top, #5d93eb, rgb(27,145,255));
+        background-image: -o-linear-gradient(top, #5d93eb, rgb(27,145,255));
+        background-image: linear-gradient(top, #5d93eb, rgb(27,145,255));
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        -ms-border-radius: 3px;
+        -o-border-radius: 3px;
+        border-radius: 3px;
+    }
+    .noTitleBar .ui-dialog-titlebar {
+        display: none;
+    }
+</style>
+<div class="successDiv" style="display: none;">
+    <strong><span style="width:500px; color: green;" class="col-lg-12 img-rounded">Password has been changed successfully! Please wait to be logged off automatically, or click Log Out. I'm not picky.</span></strong>
+    <a type="button" class="btn btn-warning btn-xs navbar-text" href="@Url.Action("Logoff","Login")"
+       style="background-color: red; color: white; font-size: small; font-weight: bold; margin-left:20px;"
+       >Log Out</a>
+</div>
+@*<strong>Domain Policy: @Model.domainPolicy</strong>
+<strong>Last Reset: @Model.lastReset</strong>*@
+<div class="form-horizontal" style="margin-left: auto; margin-right: auto; text-align: center;">
+    @if (HubSecurity.isExpired)
+    {
+        <h3 style="color: red; font-weight: bolder;">Oops! Your password has expired! Please take a moment to set a new password that follows the rules below.</h3>
+    }
+    else
+    {
+        <h3>You may change your password here, keeping in mind the rules below.</h3>
+    }
+    &nbsp;
+    <div>
+        <ul style="width: 550px;margin-left: auto; margin-right: auto; border: 1px solid red">
+            <li><span>Password must be 8 characters or more.</span></li>
+            <li><span>You cannot re-use an old password</span></li>
+            <li><span>Password must contain 3 of the following 4 characters: lowercase, UPPERCASE, Symbol, Number</span></li>
+        </ul>
+    </div>
+    @using (Html.BeginForm("Change", "Login", FormMethod.Post, new { }))
+    {
+        @Html.AntiForgeryToken()
+        <table style="margin-left: auto; margin-right: auto; text-align: center;">
+            <tr>
+                <td align="right">
+                    <span style="color: rgb(27,145,255); margin-right: 15px;"> @Html.LabelFor(model => model.UserID, htmlAttributes: new { @class = "" }) : </span>
+                </td>
+                <td>
+                    @Html.TextBoxFor(model => model.UserID, htmlAttributes: new { @class = "loginTxt" })
+                </td>
+            </tr>
+            &nbsp;
+            <tr>
+                <td align="right">
+                    <strong style="color: rgb(27,145,255); margin-right: 15px;">  @Html.LabelFor(model => model.Password, htmlAttributes: new { @class = "" }) : </strong>
+                </td>
+                <td>
+                    @Html.PasswordFor(model => model.Password, htmlAttributes: new { @class = "loginTxt" })
+                </td>
+            </tr>
+            &nbsp;
+            <tr>
+                <td align="right">
+                    <strong style="color: rgb(27,145,255); margin-right: 15px;">  @Html.LabelFor(model => model.newPassword, htmlAttributes: new { @class = "" }) : </strong>
+                </td>
+                <td>
+                    @Html.PasswordFor(model => model.newPassword, htmlAttributes: new { @class = "loginTxt" })
+                </td>
+            </tr>
+            &nbsp;
+            <tr>
+                <td align="right">
+                    <strong style="color: rgb(27,145,255); margin-right: 15px;">  @Html.LabelFor(model => model.confirmPassword, htmlAttributes: new { @class = "" }) : </strong>
+                </td>
+                <td>
+                    @Html.PasswordFor(model => model.confirmPassword, htmlAttributes: new { @class = "loginTxt" })
+                </td>
+            </tr>
+            &nbsp;
+            <tr>
+                <td></td>
+                <td align="right">
+                    <input type="submit" value="Set New Password" class="btn loginBtn" />
+                </td>
+            </tr>
+        </table>
+        @Html.ValidationMessage("AccountChangeModel")
+        @Html.ValidationSummary()
+    }
+</div>
+
+
+
+
